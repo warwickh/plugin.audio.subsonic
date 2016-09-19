@@ -154,6 +154,7 @@ class Plugin(object):
             {"mode": "starred_list", "foldername": "Starred"},
             {"mode": "playlists_list", "foldername": "Playlists"},
             {"mode": "artist_list", "foldername": "Artists"},
+            {"mode": "newest_albums_list", "foldername": "Recently Added Albums"},
             {"mode": "genre_list", "foldername": "Genres"},
             {"mode": "random_list", "foldername": "Random songs"}]
 
@@ -195,20 +196,6 @@ class Plugin(object):
 
         xbmcplugin.endOfDirectory(self.addon_handle)
 
-    def playlist_list(self):
-        """
-        Display playlist tracks.
-        """
-
-        playlist_id = self.addon_args["playlist_id"][0]
-
-        xbmcplugin.setContent(self.addon_handle, "songs")
-
-        for track in self.connection.walk_playlist(playlist_id):
-            self.add_track(track, show_artist=True)
-
-        xbmcplugin.endOfDirectory(self.addon_handle)
-
     def genre_list(self):
         """
         Display list of genres menu.
@@ -222,6 +209,35 @@ class Plugin(object):
             li = xbmcgui.ListItem(genre["value"])
             xbmcplugin.addDirectoryItem(
                 handle=self.addon_handle, url=url, listitem=li, isFolder=True)
+
+        xbmcplugin.endOfDirectory(self.addon_handle)
+        
+    def newest_albums_list(self):
+        """
+        Display newest album list.
+        """
+
+        size = self.album_list_size
+
+        xbmcplugin.setContent(self.addon_handle, "albums")
+
+        for album in self.connection.walk_album_list('newest',size,None,None,None):
+            self.add_album(album, show_artist=True)
+
+        xbmcplugin.endOfDirectory(self.addon_handle)
+        
+    def albums_by_genre_list(self):
+        """
+        Display album list by genre menu.
+        """
+
+        size = self.album_list_size
+        genre = self.addon_args["foldername"][0].decode("utf-8")
+
+        xbmcplugin.setContent(self.addon_handle, "albums")
+
+        for album in self.connection.walk_album_list('byGenre',size,None,None,genre):
+            self.add_album(album, show_artist=True)
 
         xbmcplugin.endOfDirectory(self.addon_handle)
 
