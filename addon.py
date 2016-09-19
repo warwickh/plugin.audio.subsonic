@@ -31,8 +31,9 @@ class Plugin(object):
         self.username = addon.getSetting("username")
         self.password = addon.getSetting("password")
 
-        self.random_count = addon.getSetting("random_count")
-        self.bitrate = addon.getSetting("bitrate")
+        self.random_count = int(addon.getSetting("random_count"))
+        self.album_list_size = int(addon.getSetting("album_list_size"))
+        self.bitrate = int(addon.getSetting("bitrate"))
         self.transcode_format = addon.getSetting("transcode_format")
 
         # Create connection
@@ -229,11 +230,12 @@ class Plugin(object):
         Display album list by genre menu.
         """
 
+        size = self.album_list_size
         genre = self.addon_args["foldername"][0].decode("utf-8")
 
         xbmcplugin.setContent(self.addon_handle, "albums")
 
-        for album in self.connection.walk_album_list_genre(genre):
+        for album in self.connection.walk_album_list('byGenre',size,None,None,genre):
             self.add_album(album, show_artist=True)
 
         xbmcplugin.endOfDirectory(self.addon_handle)
