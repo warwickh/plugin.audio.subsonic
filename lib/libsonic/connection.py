@@ -15,44 +15,49 @@ You should have received a copy of the GNU General Public License
 along with py-sonic.  If not, see <http://www.gnu.org/licenses/>
 """
 
-from base64 import b64encode
 from urllib import urlencode
 from .errors import *
 from pprint import pprint
 from cStringIO import StringIO
-import json , urllib2, httplib, logging, socket, ssl
+from netrc import netrc
+from hashlib import md5
+import json, urllib2, httplib, logging, socket, ssl, sys, os
 
-API_VERSION = '1.11.0'
+API_VERSION = '1.13.0'
 
 logger = logging.getLogger(__name__)
 
 class HTTPSConnectionChain(httplib.HTTPSConnection):
-    _preferred_ssl_protos = (
-        ('TLSv1' , ssl.PROTOCOL_TLSv1) ,
-        ('SSLv3' , ssl.PROTOCOL_SSLv3) ,
-        ('SSLv23' , ssl.PROTOCOL_SSLv23) ,
-    )
+    _preferred_ssl_protos = sorted([ p for p in dir(ssl)
+        if p.startswith('PROTOCOL_') ], reverse=True)
     _ssl_working_proto = None
 
-    def connect(self):
+    def _create_sock(self):
         sock = socket.create_connection((self.host, self.port), self.timeout)
         if self._tunnel_host:
             self.sock = sock
             self._tunnel()
+        return sock
+
+    def connect(self):
         if self._ssl_working_proto is not None:
             # If we have a working proto, let's use that straight away
             logger.debug("Using known working proto: '%s'",
                          self._ssl_working_proto)
+            sock = self._create_sock()
             self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file,
                 ssl_version=self._ssl_working_proto)
             return
+
         # Try connecting via the different SSL protos in preference order
-        for proto_name , proto in self._preferred_ssl_protos:
+        for proto_name in self._preferred_ssl_protos:
+            sock = self._create_sock()
+            proto = getattr(ssl, proto_name, None)
             try:
                 self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file,
                     ssl_version=proto)
             except:
-                pass
+                sock.close()
             else:
                 # Cache the working ssl version
                 HTTPSConnectionChain._ssl_working_proto = proto
@@ -60,7 +65,7 @@ class HTTPSConnectionChain(httplib.HTTPSConnection):
 
 
 class HTTPSHandlerChain(urllib2.HTTPSHandler):
-    def https_open(self , req):
+    def https_open(self, req):
         return self.do_open(HTTPSConnectionChain, req)
 
 # install opener
@@ -76,9 +81,9 @@ class PysHTTPRedirectHandler(urllib2.HTTPRedirectHandler):
         if (code in (301, 302, 303, 307) and m in ("GET", "HEAD")
             or code in (301, 302, 303) and m == "POST"):
             newurl = newurl.replace(' ', '%20')
-            newheaders = dict((k,v) for k,v in req.headers.items()
-                              if k.lower() not in ("content-length", "content-type")
-                             )
+            newheaders = dict((k, v) for k, v in req.headers.items()
+                if k.lower() not in ("content-length", "content-type")
+            )
             data = None
             if req.has_data():
                 data = req.get_data()
@@ -91,8 +96,9 @@ class PysHTTPRedirectHandler(urllib2.HTTPRedirectHandler):
             raise urllib2.HTTPError(req.get_full_url(), code, msg, headers, fp)
 
 class Connection(object):
-    def __init__(self , baseUrl , username , password , port=4040 ,
-            serverPath='/rest' , appName='py-sonic' , apiVersion=API_VERSION):
+    def __init__(self, baseUrl, username=None, password=None, port=4040,
+            serverPath='/rest', appName='py-sonic', apiVersion=API_VERSION,
+            insecure=False, useNetrc=None):
         """
         This will create a connection to your subsonic server
 
@@ -116,8 +122,12 @@ class Connection(object):
                             baseUrl = "https://mydomain.com"
                             port = 8080
                             serverPath = "/path/to/subsonic/rest"
-        username:str        The username to use for the connection
-        password:str        The password to use for the connection
+        username:str        The username to use for the connection.  This
+                            can be None if `useNetrc' is True (and you
+                            have a valid entry in your netrc file)
+        password:str        The password to use for the connection.  This
+                            can be None if `useNetrc' is True (and you
+                            have a valid entry in your netrc file)
         port:int            The port number to connect on.  The default for
                             unencrypted subsonic connections is 4040
         serverPath:str      The base resource path for the subsonic views.
@@ -140,46 +150,67 @@ class Connection(object):
                             to find the Subsonic version -> API version table.
                             This is useful if you are connecting to an older
                             version of Subsonic.
+        insecure:bool       This will allow you to use self signed
+                            certificates when connecting if set to True.
+        useNetrc:str|bool   You can either specify a specific netrc
+                            formatted file or True to use your default
+                            netrc file ($HOME/.netrc).
+
         """
         self._baseUrl = baseUrl
+        self._hostname = baseUrl.split('://')[1].strip()
         self._username = username
         self._rawPass = password
+
+        self._netrc = None
+        if useNetrc is not None:
+            self._process_netrc(useNetrc)
+        elif username is None or password is None:
+            raise CredentialError('You must specify either a username/password '
+                'combination or "useNetrc" must be either True or a string '
+                'representing a path to a netrc file')
+
         self._port = int(port)
         self._apiVersion = apiVersion
         self._appName = appName
         self._serverPath = serverPath.strip('/')
-        self._opener = self._getOpener(self._username , self._rawPass)
+        self._insecure = insecure
+        self._opener = self._getOpener(self._username, self._rawPass)
 
     # Properties
-    def setBaseUrl(self , url):
+    def setBaseUrl(self, url):
         self._baseUrl = url
-        self._opener = self._getOpener(self._username , self._rawPass)
-    baseUrl = property(lambda s: s._baseUrl , setBaseUrl)
+        self._opener = self._getOpener(self._username, self._rawPass)
+    baseUrl = property(lambda s: s._baseUrl, setBaseUrl)
 
-    def setPort(self , port):
+    def setPort(self, port):
         self._port = int(port)
-    port = property(lambda s: s._port , setPort)
+    port = property(lambda s: s._port, setPort)
 
-    def setUsername(self , username):
+    def setUsername(self, username):
         self._username = username
-        self._opener = self._getOpener(self._username , self._rawPass)
-    username = property(lambda s: s._username , setUsername)
+        self._opener = self._getOpener(self._username, self._rawPass)
+    username = property(lambda s: s._username, setUsername)
 
-    def setPassword(self , password):
+    def setPassword(self, password):
         self._rawPass = password
         # Redo the opener with the new creds
-        self._opener = self._getOpener(self._username , self._rawPass)
-    password = property(lambda s: s._rawPass , setPassword)
+        self._opener = self._getOpener(self._username, self._rawPass)
+    password = property(lambda s: s._rawPass, setPassword)
 
     apiVersion = property(lambda s: s._apiVersion)
 
-    def setAppName(self , appName):
+    def setAppName(self, appName):
         self._appName = appName
-    appName = property(lambda s: s._appName , setAppName)
+    appName = property(lambda s: s._appName, setAppName)
 
-    def setServerPath(self , path):
+    def setServerPath(self, path):
         self._serverPath = path.strip('/')
-    serverPath = property(lambda s: s._serverPath , setServerPath)
+    serverPath = property(lambda s: s._serverPath, setServerPath)
+
+    def setInsecure(self, insecure):
+        self._insecure = insecure
+    insecure = property(lambda s: s._insecure, setInsecure)
 
     # API methods
     def ping(self):
@@ -199,7 +230,8 @@ class Connection(object):
         if res['status'] == 'ok':
             return True
         elif res['status'] == 'failed':
-            raise getExcByCode(res['error']['code'])
+            exc = getExcByCode(res['error']['code'])
+            raise exc(res['error']['message'])
         return False
 
     def getLicense(self):
@@ -289,7 +321,7 @@ class Connection(object):
         self._checkStatus(res)
         return res
 
-    def getIndexes(self , musicFolderId=None , ifModifiedSince=0):
+    def getIndexes(self, musicFolderId=None, ifModifiedSince=0):
         """
         since: 1.0.0
 
@@ -299,7 +331,8 @@ class Connection(object):
                                 artists for the given folder ID from
                                 the getMusicFolders call
         ifModifiedSince:int     If specified, return a result if the artist
-                                collection has changed since the given time
+                                collection has changed since the given 
+                                unix timestamp
 
         Returns a dict like the following:
 
@@ -312,7 +345,7 @@ class Connection(object):
                                       {u'id': u'29348729874',
                                        u'name': u'A-Teens, The'},
                                       {u'id': u'298472938',
-                                       u'name': u'ABA STRUCTURE'}] ,
+                                       u'name': u'ABA STRUCTURE'}],
                       u'lastModified': 1303318347000L},
          u'status': u'ok',
          u'version': u'1.5.0',
@@ -321,15 +354,16 @@ class Connection(object):
         methodName = 'getIndexes'
         viewName = '%s.view' % methodName
 
-        q = self._getQueryDict({'musicFolderId': musicFolderId ,
+        q = self._getQueryDict({'musicFolderId': musicFolderId,
             'ifModifiedSince': self._ts2milli(ifModifiedSince)})
 
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
+        self._fixLastModified(res)
         return res
 
-    def getMusicDirectory(self , mid):
+    def getMusicDirectory(self, mid):
         """
         since: 1.0.0
 
@@ -387,13 +421,13 @@ class Connection(object):
         methodName = 'getMusicDirectory'
         viewName = '%s.view' % methodName
 
-        req = self._getRequest(viewName , {'id': mid})
+        req = self._getRequest(viewName, {'id': mid})
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def search(self , artist=None , album=None , title=None , any=None ,
-            count=20 , offset=0 , newerThan=None):
+    def search(self, artist=None, album=None, title=None, any=None,
+            count=20, offset=0, newerThan=None):
         """
         since: 1.0.0
 
@@ -416,17 +450,17 @@ class Connection(object):
         methodName = 'search'
         viewName = '%s.view' % methodName
 
-        q = self._getQueryDict({'artist': artist , 'album': album ,
-            'title': title , 'any': any , 'count': count , 'offset': offset ,
+        q = self._getQueryDict({'artist': artist, 'album': album,
+            'title': title, 'any': any, 'count': count, 'offset': offset,
             'newerThan': self._ts2milli(newerThan)})
 
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def search2(self , query , artistCount=20 , artistOffset=0 , albumCount=20 ,
-            albumOffset=0 , songCount=20 , songOffset=0):
+    def search2(self, query, artistCount=20, artistOffset=0, albumCount=20,
+            albumOffset=0, songCount=20, songOffset=0, musicFolderId=None):
         """
         since: 1.4.0
 
@@ -440,6 +474,8 @@ class Connection(object):
         albumOffset:int     Search offset for albums (for paging) [default: 0]
         songCount:int       Max number of songs to return [default: 20]
         songOffset:int      Search offset for songs (for paging) [default: 0]
+        musicFolderId:int   Only return results from the music folder
+                            with the given ID. See getMusicFolders
 
         Returns a dict like the following:
 
@@ -476,18 +512,18 @@ class Connection(object):
         methodName = 'search2'
         viewName = '%s.view' % methodName
 
-        q = {'query': query , 'artistCount': artistCount ,
-            'artistOffset': artistOffset , 'albumCount': albumCount ,
-            'albumOffset': albumOffset , 'songCount': songCount ,
-            'songOffset': songOffset}
+        q = self._getQueryDict({'query': query, 'artistCount': artistCount,
+            'artistOffset': artistOffset, 'albumCount': albumCount,
+            'albumOffset': albumOffset, 'songCount': songCount,
+            'songOffset': songOffset, 'musicFolderId': musicFolderId})
 
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def search3(self , query , artistCount=20 , artistOffset=0 , albumCount=20 ,
-            albumOffset=0 , songCount=20 , songOffset=0):
+    def search3(self, query, artistCount=20, artistOffset=0, albumCount=20,
+            albumOffset=0, songCount=20, songOffset=0, musicFolderId=None):
         """
         since: 1.8.0
 
@@ -501,6 +537,8 @@ class Connection(object):
         albumOffset:int     Search offset for albums (for paging) [default: 0]
         songCount:int       Max number of songs to return [default: 20]
         songOffset:int      Search offset for songs (for paging) [default: 0]
+        musicFolderId:int   Only return results from the music folder
+                            with the given ID. See getMusicFolders
 
         Returns a dict like the following (search for "Tune Yards":
             {u'searchResult3': {u'album': [{u'artist': u'Tune-Yards',
@@ -552,17 +590,17 @@ class Connection(object):
         methodName = 'search3'
         viewName = '%s.view' % methodName
 
-        q = {'query': query , 'artistCount': artistCount ,
-            'artistOffset': artistOffset , 'albumCount': albumCount ,
-            'albumOffset': albumOffset , 'songCount': songCount ,
-            'songOffset': songOffset}
+        q = self._getQueryDict({'query': query, 'artistCount': artistCount,
+            'artistOffset': artistOffset, 'albumCount': albumCount,
+            'albumOffset': albumOffset, 'songCount': songCount,
+            'songOffset': songOffset, 'musicFolderId': musicFolderId})
 
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def getPlaylists(self , username=None):
+    def getPlaylists(self, username=None):
         """
         since: 1.0.0
 
@@ -589,12 +627,12 @@ class Connection(object):
 
         q = self._getQueryDict({'username': username})
 
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def getPlaylist(self , pid):
+    def getPlaylist(self, pid):
         """
         since: 1.0.0
 
@@ -629,12 +667,12 @@ class Connection(object):
         methodName = 'getPlaylist'
         viewName = '%s.view' % methodName
 
-        req = self._getRequest(viewName , {'id': pid})
+        req = self._getRequest(viewName, {'id': pid})
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def createPlaylist(self , playlistId=None , name=None , songIds=[]):
+    def createPlaylist(self, playlistId=None, name=None, songIds=[]):
         """
         since: 1.2.0
 
@@ -662,14 +700,14 @@ class Connection(object):
             raise ArgumentError('You can only supply either a playlistId '
                  'OR a name, not both')
 
-        q = self._getQueryDict({'playlistId': playlistId , 'name': name})
+        q = self._getQueryDict({'playlistId': playlistId, 'name': name})
 
-        req = self._getRequestWithList(viewName , 'songId' , songIds , q)
+        req = self._getRequestWithList(viewName, 'songId', songIds, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def deletePlaylist(self , pid):
+    def deletePlaylist(self, pid):
         """
         since: 1.2.0
 
@@ -683,12 +721,12 @@ class Connection(object):
         methodName = 'deletePlaylist'
         viewName = '%s.view' % methodName
 
-        req = self._getRequest(viewName , {'id': pid})
+        req = self._getRequest(viewName, {'id': pid})
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def download(self , sid):
+    def download(self, sid):
         """
         since: 1.0.0
 
@@ -702,14 +740,14 @@ class Connection(object):
         methodName = 'download'
         viewName = '%s.view' % methodName
 
-        req = self._getRequest(viewName , {'id': sid})
+        req = self._getRequest(viewName, {'id': sid})
         res = self._doBinReq(req)
-        if isinstance(res , dict):
+        if isinstance(res, dict):
             self._checkStatus(res)
         return res
 
-    def stream(self , sid , maxBitRate=0 , tformat=None , timeOffset=None ,
-            size=None , estimateContentLength=False):
+    def stream(self, sid, maxBitRate=0, tformat=None, timeOffset=None,
+            size=None, estimateContentLength=False):
         """
         since: 1.0.0
 
@@ -741,17 +779,17 @@ class Connection(object):
         methodName = 'stream'
         viewName = '%s.view' % methodName
 
-        q = self._getQueryDict({'id': sid , 'maxBitRate': maxBitRate ,
-            'format': tformat , 'timeOffset': timeOffset , 'size': size ,
+        q = self._getQueryDict({'id': sid, 'maxBitRate': maxBitRate,
+            'format': tformat, 'timeOffset': timeOffset, 'size': size,
             'estimateContentLength': estimateContentLength})
 
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
         res = self._doBinReq(req)
-        if isinstance(res , dict):
+        if isinstance(res, dict):
             self._checkStatus(res)
         return res
 
-    def getCoverArt(self , aid , size=None):
+    def getCoverArt(self, aid, size=None):
         """
         since: 1.0.0
 
@@ -766,15 +804,15 @@ class Connection(object):
         methodName = 'getCoverArt'
         viewName = '%s.view' % methodName
 
-        q = self._getQueryDict({'id': aid , 'size': size})
+        q = self._getQueryDict({'id': aid, 'size': size})
 
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
         res = self._doBinReq(req)
-        if isinstance(res , dict):
+        if isinstance(res, dict):
             self._checkStatus(res)
         return res
 
-    def scrobble(self , sid , submission=True , listenTime=None):
+    def scrobble(self, sid, submission=True, listenTime=None):
         """
         since: 1.5.0
 
@@ -804,15 +842,15 @@ class Connection(object):
         methodName = 'scrobble'
         viewName = '%s.view' % methodName
 
-        q = self._getQueryDict({'id': sid , 'submission': submission ,
+        q = self._getQueryDict({'id': sid, 'submission': submission,
             'time': self._ts2milli(listenTime)})
 
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def changePassword(self , username , password):
+    def changePassword(self, username, password):
         """
         since: 1.1.0
 
@@ -835,15 +873,15 @@ class Connection(object):
         # There seems to be an issue with some subsonic implementations
         # not recognizing the "enc:" precursor to the encoded password and
         # encodes the whole "enc:<hex>" as the password.  Weird.
-        #q = {'username': username , 'password': hexPass.lower()}
-        q = {'username': username , 'password': password}
+        #q = {'username': username, 'password': hexPass.lower()}
+        q = {'username': username, 'password': password}
 
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def getUser(self , username):
+    def getUser(self, username):
         """
         since: 1.3.0
 
@@ -876,7 +914,7 @@ class Connection(object):
 
         q = {'username': username}
 
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
@@ -905,7 +943,7 @@ class Connection(object):
                    u'username': u'user1'},
                    ...
                    ...
-                   ]} ,
+                   ]},
          u'version': u'1.10.2',
          u'xmlns': u'http://subsonic.org/restapi'}
         """
@@ -917,11 +955,12 @@ class Connection(object):
         self._checkStatus(res)
         return res
 
-    def createUser(self , username , password , email ,
-            ldapAuthenticated=False , adminRole=False , settingsRole=True ,
-            streamRole=True , jukeboxRole=False , downloadRole=False ,
-            uploadRole=False , playlistRole=False , coverArtRole=False ,
-            commentRole=False , podcastRole=False , shareRole=False):
+    def createUser(self, username, password, email,
+            ldapAuthenticated=False, adminRole=False, settingsRole=True,
+            streamRole=True, jukeboxRole=False, downloadRole=False,
+            uploadRole=False, playlistRole=False, coverArtRole=False,
+            commentRole=False, podcastRole=False, shareRole=False,
+            musicFolderId=None):
         """
         since: 1.1.0
 
@@ -932,6 +971,7 @@ class Connection(object):
         password:str        The password for the new user
         email:str           The email of the new user
         <For info on the boolean roles, see http://subsonic.org for more info>
+        musicFolderId:int   These are the only folders the user has access to
 
         Returns a dict like the following:
 
@@ -943,30 +983,37 @@ class Connection(object):
         viewName = '%s.view' % methodName
         hexPass = 'enc:%s' % self._hexEnc(password)
 
-        q = {'username': username , 'password': hexPass , 'email': email ,
-            'ldapAuthenticated': ldapAuthenticated , 'adminRole': adminRole ,
-            'settingsRole': settingsRole , 'streamRole': streamRole ,
-            'jukeboxRole': jukeboxRole , 'downloadRole': downloadRole ,
-            'uploadRole': uploadRole , 'playlistRole': playlistRole ,
-            'coverArtRole': coverArtRole , 'commentRole': commentRole ,
-            'podcastRole': podcastRole , 'shareRole': shareRole}
+        q = self._getQueryDict({
+            'username': username, 'password': hexPass, 'email': email,
+            'ldapAuthenticated': ldapAuthenticated, 'adminRole': adminRole,
+            'settingsRole': settingsRole, 'streamRole': streamRole,
+            'jukeboxRole': jukeboxRole, 'downloadRole': downloadRole,
+            'uploadRole': uploadRole, 'playlistRole': playlistRole,
+            'coverArtRole': coverArtRole, 'commentRole': commentRole,
+            'podcastRole': podcastRole, 'shareRole': shareRole,
+            'musicFolderId': musicFolderId
+        })
 
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def updateUser(self , username ,  password=None , email=None ,
-            ldapAuthenticated=False , adminRole=False , settingsRole=True ,
-            streamRole=True , jukeboxRole=False , downloadRole=False ,
-            uploadRole=False , playlistRole=False , coverArtRole=False ,
-            commentRole=False , podcastRole=False , shareRole=False):
+    def updateUser(self, username,  password=None, email=None,
+            ldapAuthenticated=False, adminRole=False, settingsRole=True,
+            streamRole=True, jukeboxRole=False, downloadRole=False,
+            uploadRole=False, playlistRole=False, coverArtRole=False,
+            commentRole=False, podcastRole=False, shareRole=False,
+            musicFolderId=None, maxBitRate=0):
         """
         since 1.10.1
 
         Modifies an existing Subsonic user.
 
         username:str        The username of the user to update.
+        musicFolderId:int   Only return results from the music folder
+                            with the given ID. See getMusicFolders
+        maxBitRate:int      The max bitrate for the user.  0 is unlimited
 
         All other args are the same as create user and you can update
         whatever item you wish to update for the given username.
@@ -981,20 +1028,22 @@ class Connection(object):
         viewName = '%s.view' % methodName
         if password is not None:
             password = 'enc:%s' % self._hexEnc(password)
-        q = self._getQueryDict({'username': username , 'password': password ,
-            'email': email , 'ldapAuthenticated': ldapAuthenticated ,
-            'adminRole': adminRole ,
-            'settingsRole': settingsRole , 'streamRole': streamRole ,
-            'jukeboxRole': jukeboxRole , 'downloadRole': downloadRole ,
-            'uploadRole': uploadRole , 'playlistRole': playlistRole ,
-            'coverArtRole': coverArtRole , 'commentRole': commentRole ,
-            'podcastRole': podcastRole , 'shareRole': shareRole})
-        req = self._getRequest(viewName , q)
+        q = self._getQueryDict({'username': username, 'password': password,
+            'email': email, 'ldapAuthenticated': ldapAuthenticated,
+            'adminRole': adminRole,
+            'settingsRole': settingsRole, 'streamRole': streamRole,
+            'jukeboxRole': jukeboxRole, 'downloadRole': downloadRole,
+            'uploadRole': uploadRole, 'playlistRole': playlistRole,
+            'coverArtRole': coverArtRole, 'commentRole': commentRole,
+            'podcastRole': podcastRole, 'shareRole': shareRole,
+            'musicFolderId': musicFolderId, 'maxBitRate': maxBitRate
+        })
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def deleteUser(self , username):
+    def deleteUser(self, username):
         """
         since: 1.3.0
 
@@ -1014,12 +1063,12 @@ class Connection(object):
 
         q = {'username': username}
 
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def getChatMessages(self , since=1):
+    def getChatMessages(self, since=1):
         """
         since: 1.2.0
 
@@ -1043,12 +1092,12 @@ class Connection(object):
 
         q = {'since': self._ts2milli(since)}
 
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def addChatMessage(self , message):
+    def addChatMessage(self, message):
         """
         since: 1.2.0
 
@@ -1067,13 +1116,13 @@ class Connection(object):
 
         q = {'message': message}
 
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def getAlbumList(self , ltype , size=10 , offset=0 , fromYear=None ,
-            toYear=None , genre=None , musicFolderId=None):
+    def getAlbumList(self, ltype, size=10, offset=0, fromYear=None,
+            toYear=None, genre=None, musicFolderId=None):
         """
         since: 1.2.0
 
@@ -1118,17 +1167,17 @@ class Connection(object):
         methodName = 'getAlbumList'
         viewName = '%s.view' % methodName
 
-        q = self._getQueryDict({'type': ltype , 'size': size ,
-            'offset': offset , 'fromYear': fromYear , 'toYear': toYear ,
-            'genre': genre , 'musicFolderId': musicFolderId})
+        q = self._getQueryDict({'type': ltype, 'size': size,
+            'offset': offset, 'fromYear': fromYear, 'toYear': toYear,
+            'genre': genre, 'musicFolderId': musicFolderId})
 
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def getAlbumList2(self , ltype , size=10 , offset=0 , fromYear=None ,
-            toYear=None , genre=None):
+    def getAlbumList2(self, ltype, size=10, offset=0, fromYear=None,
+            toYear=None, genre=None):
         """
         since 1.8.0
 
@@ -1175,17 +1224,17 @@ class Connection(object):
         methodName = 'getAlbumList2'
         viewName = '%s.view' % methodName
 
-        q = self._getQueryDict({'type': ltype , 'size': size ,
-            'offset': offset , 'fromYear': fromYear , 'toYear': toYear ,
+        q = self._getQueryDict({'type': ltype, 'size': size,
+            'offset': offset, 'fromYear': fromYear, 'toYear': toYear,
             'genre': genre})
 
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def getRandomSongs(self , size=10 , genre=None , fromYear=None ,
-            toYear=None , musicFolderId=None):
+    def getRandomSongs(self, size=10, genre=None, fromYear=None,
+            toYear=None, musicFolderId=None):
         """
         since 1.2.0
 
@@ -1235,16 +1284,16 @@ class Connection(object):
         methodName = 'getRandomSongs'
         viewName = '%s.view' % methodName
 
-        q = self._getQueryDict({'size': size , 'genre': genre ,
-            'fromYear': fromYear , 'toYear': toYear ,
+        q = self._getQueryDict({'size': size, 'genre': genre,
+            'fromYear': fromYear, 'toYear': toYear,
             'musicFolderId': musicFolderId})
 
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def getLyrics(self , artist=None , title=None):
+    def getLyrics(self, artist=None, title=None):
         """
         since: 1.2.0
 
@@ -1254,7 +1303,7 @@ class Connection(object):
         title:str       The song title
 
         Returns a dict like the following for
-        getLyrics('Bob Dylan' , 'Blowin in the wind'):
+        getLyrics('Bob Dylan', 'Blowin in the wind'):
 
         {u'lyrics': {u'artist': u'Bob Dylan',
              u'content': u"How many roads must a man walk down<snip>",
@@ -1266,14 +1315,14 @@ class Connection(object):
         methodName = 'getLyrics'
         viewName = '%s.view' % methodName
 
-        q = self._getQueryDict({'artist': artist , 'title': title})
+        q = self._getQueryDict({'artist': artist, 'title': title})
 
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def jukeboxControl(self , action , index=None , sids=[] , gain=None ,
+    def jukeboxControl(self, action, index=None, sids=[], gain=None,
             offset=None):
         """
         since: 1.2.0
@@ -1303,23 +1352,23 @@ class Connection(object):
         methodName = 'jukeboxControl'
         viewName = '%s.view' % methodName
 
-        q = self._getQueryDict({'action': action , 'index': index ,
-            'gain': gain , 'offset': offset})
+        q = self._getQueryDict({'action': action, 'index': index,
+            'gain': gain, 'offset': offset})
 
         req = None
         if action == 'add':
             # We have to deal with the sids
-            if not (isinstance(sids , list) or isinstance(sids , tuple)):
+            if not (isinstance(sids, list) or isinstance(sids, tuple)):
                 raise ArgumentError('If you are adding songs, "sids" must '
                     'be a list or tuple!')
-            req = self._getRequestWithList(viewName , 'id' , sids , q)
+            req = self._getRequestWithList(viewName, 'id', sids, q)
         else:
-            req = self._getRequest(viewName , q)
+            req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def getPodcasts(self , incEpisodes=True , pid=None):
+    def getPodcasts(self, incEpisodes=True, pid=None):
         """
         since: 1.6.0
 
@@ -1377,9 +1426,9 @@ class Connection(object):
         methodName = 'getPodcasts'
         viewName = '%s.view' % methodName
 
-        q = self._getQueryDict({'includeEpisodes': incEpisodes ,
+        q = self._getQueryDict({'includeEpisodes': incEpisodes,
             'id': pid})
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
@@ -1421,7 +1470,7 @@ class Connection(object):
         self._checkStatus(res)
         return res
 
-    def createShare(self , shids=[] , description=None , expires=None):
+    def createShare(self, shids=[], description=None, expires=None):
         """
         since: 1.6.0
 
@@ -1445,14 +1494,14 @@ class Connection(object):
         methodName = 'createShare'
         viewName = '%s.view' % methodName
 
-        q = self._getQueryDict({'description': description ,
+        q = self._getQueryDict({'description': description,
             'expires': self._ts2milli(expires)})
-        req = self._getRequestWithList(viewName , 'id' , shids , q)
+        req = self._getRequestWithList(viewName, 'id', shids, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def updateShare(self , shid , description=None , expires=None):
+    def updateShare(self, shid, description=None, expires=None):
         """
         since: 1.6.0
 
@@ -1466,15 +1515,15 @@ class Connection(object):
         methodName = 'updateShare'
         viewName = '%s.view' % methodName
 
-        q = self._getQueryDict({'id': shid , 'description': description ,
+        q = self._getQueryDict({'id': shid, 'description': description,
             expires: self._ts2milli(expires)})
 
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def deleteShare(self , shid):
+    def deleteShare(self, shid):
         """
         since: 1.6.0
 
@@ -1489,12 +1538,12 @@ class Connection(object):
 
         q = self._getQueryDict({'id': shid})
 
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def setRating(self , id , rating):
+    def setRating(self, id, rating):
         """
         since: 1.6.0
 
@@ -1518,9 +1567,9 @@ class Connection(object):
             raise ArgumentError('Rating must be an integer between 0 and 5: '
                 '%r' % rating)
 
-        q = self._getQueryDict({'id': id , 'rating': rating})
+        q = self._getQueryDict({'id': id, 'rating': rating})
 
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
@@ -1555,7 +1604,7 @@ class Connection(object):
         self._checkStatus(res)
         return res
 
-    def getArtist(self , id):
+    def getArtist(self, id):
         """
         since 1.8.0
 
@@ -1595,12 +1644,12 @@ class Connection(object):
 
         q = self._getQueryDict({'id': id})
 
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def getAlbum(self , id):
+    def getAlbum(self, id):
         """
         since 1.8.0
 
@@ -1649,12 +1698,12 @@ class Connection(object):
 
         q = self._getQueryDict({'id': id})
 
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def getSong(self , id):
+    def getSong(self, id):
         """
         since 1.8.0
 
@@ -1695,7 +1744,7 @@ class Connection(object):
 
         q = self._getQueryDict({'id': id})
 
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
@@ -1732,9 +1781,12 @@ class Connection(object):
         self._checkStatus(res)
         return res
 
-    def getStarred(self):
+    def getStarred(self, musicFolderId=None):
         """
         since 1.8.0
+
+        musicFolderId:int   Only return results from the music folder
+                            with the given ID. See getMusicFolders
 
         Returns starred songs, albums and artists
 
@@ -1797,14 +1849,21 @@ class Connection(object):
         methodName = 'getStarred'
         viewName = '%s.view' % methodName
 
-        req = self._getRequest(viewName)
+        q = {}
+        if musicFolderId:
+            q['musicFolderId'] = musicFolderId
+
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def getStarred2(self):
+    def getStarred2(self, musicFolderId=None):
         """
         since 1.8.0
+
+        musicFolderId:int   Only return results from the music folder
+                            with the given ID. See getMusicFolders
 
         Returns starred songs, albums and artists like getStarred(),
         but this uses ID3 tags for organization
@@ -1816,12 +1875,16 @@ class Connection(object):
         methodName = 'getStarred2'
         viewName = '%s.view' % methodName
 
-        req = self._getRequest(viewName)
+        q = {}
+        if musicFolderId:
+            q['musicFolderId'] = musicFolderId
+
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def updatePlaylist(self , lid , name=None , comment=None , songIdsToAdd=[] ,
+    def updatePlaylist(self, lid, name=None, comment=None, songIdsToAdd=[],
             songIndexesToRemove=[]):
         """
         since 1.8.0
@@ -1843,22 +1906,22 @@ class Connection(object):
         methodName = 'updatePlaylist'
         viewName = '%s.view' % methodName
 
-        q = self._getQueryDict({'playlistId': lid , 'name': name ,
+        q = self._getQueryDict({'playlistId': lid, 'name': name,
             'comment': comment})
-        if not isinstance(songIdsToAdd , list) or isinstance(songIdsToAdd ,
+        if not isinstance(songIdsToAdd, list) or isinstance(songIdsToAdd,
                 tuple):
             songIdsToAdd = [songIdsToAdd]
-        if not isinstance(songIndexesToRemove , list) or isinstance(
-                songIndexesToRemove , tuple):
+        if not isinstance(songIndexesToRemove, list) or isinstance(
+                songIndexesToRemove, tuple):
             songIndexesToRemove = [songIndexesToRemove]
-        listMap = {'songIdToAdd': songIdsToAdd ,
+        listMap = {'songIdToAdd': songIdsToAdd,
             'songIndexToRemove': songIndexesToRemove}
-        req = self._getRequestWithLists(viewName , listMap , q)
+        req = self._getRequestWithLists(viewName, listMap, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def getAvatar(self , username):
+    def getAvatar(self, username):
         """
         since 1.8.0
 
@@ -1874,17 +1937,17 @@ class Connection(object):
 
         q = {'username': username}
 
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
         try:
             res = self._doBinReq(req)
         except urllib2.HTTPError:
             # Avatar is not set/does not exist, return None
             return None
-        if isinstance(res , dict):
+        if isinstance(res, dict):
             self._checkStatus(res)
         return res
 
-    def star(self , sids=[] , albumIds=[] , artistIds=[]):
+    def star(self, sids=[], albumIds=[], artistIds=[]):
         """
         since 1.8.0
 
@@ -1905,21 +1968,21 @@ class Connection(object):
         methodName = 'star'
         viewName = '%s.view' % methodName
 
-        if not isinstance(sids , list) or isinstance(sids , tuple):
+        if not isinstance(sids, list) or isinstance(sids, tuple):
             sids = [sids]
-        if not isinstance(albumIds , list) or isinstance(albumIds , tuple):
+        if not isinstance(albumIds, list) or isinstance(albumIds, tuple):
             albumIds = [albumIds]
-        if not isinstance(artistIds , list) or isinstance(artistIds , tuple):
+        if not isinstance(artistIds, list) or isinstance(artistIds, tuple):
             artistIds = [artistIds]
-        listMap = {'id': sids ,
-            'albumId': albumIds ,
+        listMap = {'id': sids,
+            'albumId': albumIds,
             'artistId': artistIds}
-        req = self._getRequestWithLists(viewName , listMap)
+        req = self._getRequestWithLists(viewName, listMap)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def unstar(self , sids=[] , albumIds=[] , artistIds=[]):
+    def unstar(self, sids=[], albumIds=[], artistIds=[]):
         """
         since 1.8.0
 
@@ -1941,16 +2004,16 @@ class Connection(object):
         methodName = 'unstar'
         viewName = '%s.view' % methodName
 
-        if not isinstance(sids , list) or isinstance(sids , tuple):
+        if not isinstance(sids, list) or isinstance(sids, tuple):
             sids = [sids]
-        if not isinstance(albumIds , list) or isinstance(albumIds , tuple):
+        if not isinstance(albumIds, list) or isinstance(albumIds, tuple):
             albumIds = [albumIds]
-        if not isinstance(artistIds , list) or isinstance(artistIds , tuple):
+        if not isinstance(artistIds, list) or isinstance(artistIds, tuple):
             artistIds = [artistIds]
-        listMap = {'id': sids ,
-            'albumId': albumIds ,
+        listMap = {'id': sids,
+            'albumId': albumIds,
             'artistId': artistIds}
-        req = self._getRequestWithLists(viewName , listMap)
+        req = self._getRequestWithLists(viewName, listMap)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
@@ -1969,7 +2032,7 @@ class Connection(object):
         self._checkStatus(res)
         return res
 
-    def getSongsByGenre(self , genre , count=10 , offset=0):
+    def getSongsByGenre(self, genre, count=10, offset=0, musicFolderId=None):
         """
         since 1.9.0
 
@@ -1979,21 +2042,24 @@ class Connection(object):
         count:int       The maximum number of songs to return.  Max is 500
                         default: 10
         offset:int      The offset if you are paging.  default: 0
+        musicFolderId:int   Only return results from the music folder
+                            with the given ID. See getMusicFolders
         """
         methodName = 'getGenres'
         viewName = '%s.view' % methodName
 
-        q = {'genre': genre ,
-            'count': count ,
-            'offset': offset ,
-        }
+        q = self._getQueryDict({'genre': genre,
+            'count': count,
+            'offset': offset,
+            'musicFolderId': musicFolderId,
+        })
 
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def hls (self , mid , bitrate=None):
+    def hls (self, mid, bitrate=None):
         """
         since 1.8.0
 
@@ -2022,14 +2088,14 @@ class Connection(object):
         methodName = 'hls'
         viewName = '%s.view' % methodName
 
-        q = self._getQueryDict({'id': mid , 'bitrate': bitrate})
-        req = self._getRequest(viewName , q)
+        q = self._getQueryDict({'id': mid, 'bitrate': bitrate})
+        req = self._getRequest(viewName, q)
         try:
             res = self._doBinReq(req)
         except urllib2.HTTPError:
             # Avatar is not set/does not exist, return None
             return None
-        if isinstance(res , dict):
+        if isinstance(res, dict):
             self._checkStatus(res)
         return res.read()
 
@@ -2048,7 +2114,7 @@ class Connection(object):
         self._checkStatus(res)
         return res
 
-    def createPodcastChannel(self , url):
+    def createPodcastChannel(self, url):
         """
         since: 1.9.0
 
@@ -2062,12 +2128,12 @@ class Connection(object):
 
         q = {'url': url}
 
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def deletePodcastChannel(self , pid):
+    def deletePodcastChannel(self, pid):
         """
         since: 1.9.0
 
@@ -2081,12 +2147,12 @@ class Connection(object):
 
         q = {'id': pid}
 
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def deletePodcastEpisode(self , pid):
+    def deletePodcastEpisode(self, pid):
         """
         since: 1.9.0
 
@@ -2100,12 +2166,12 @@ class Connection(object):
 
         q = {'id': pid}
 
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def downloadPodcastEpisode(self , pid):
+    def downloadPodcastEpisode(self, pid):
         """
         since: 1.9.0
 
@@ -2119,7 +2185,7 @@ class Connection(object):
 
         q = {'id': pid}
 
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
@@ -2153,7 +2219,7 @@ class Connection(object):
         self._checkStatus(res)
         return res
 
-    def createBookmark(self , mid , position , comment=None):
+    def createBookmark(self, mid, position, comment=None):
         """
         since: 1.9.0
 
@@ -2168,15 +2234,15 @@ class Connection(object):
         methodName = 'createBookmark'
         viewName = '%s.view' % methodName
 
-        q = self._getQueryDict({'id': mid , 'position': position ,
+        q = self._getQueryDict({'id': mid, 'position': position,
             'comment': comment})
 
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def deleteBookmark(self , mid):
+    def deleteBookmark(self, mid):
         """
         since: 1.9.0
 
@@ -2190,12 +2256,12 @@ class Connection(object):
 
         q = {'id': mid}
 
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def getArtistInfo(self , aid , count=20 , includeNotPresent=False):
+    def getArtistInfo(self, aid, count=20, includeNotPresent=False):
         """
         since: 1.11.0
 
@@ -2210,15 +2276,15 @@ class Connection(object):
         methodName = 'getArtistInfo'
         viewName = '%s.view' % methodName
 
-        q = {'id': aid , 'count': count ,
+        q = {'id': aid, 'count': count,
             'includeNotPresent': includeNotPresent}
 
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def getArtistInfo2(self , aid , count=20 , includeNotPresent=False):
+    def getArtistInfo2(self, aid, count=20, includeNotPresent=False):
         """
         since: 1.11.0
 
@@ -2232,15 +2298,15 @@ class Connection(object):
         methodName = 'getArtistInfo2'
         viewName = '%s.view' % methodName
 
-        q = {'id': aid , 'count': count ,
+        q = {'id': aid, 'count': count,
             'includeNotPresent': includeNotPresent}
 
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def getSimilarSongs(self , iid , count=50):
+    def getSimilarSongs(self, iid, count=50):
         """
         since 1.11.0
 
@@ -2254,14 +2320,14 @@ class Connection(object):
         methodName = 'getSimilarSongs'
         viewName = '%s.view' % methodName
 
-        q = {'id': iid , 'count': count}
+        q = {'id': iid, 'count': count}
 
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
 
-    def getSimilarSongs2(self , iid , count=50):
+    def getSimilarSongs2(self, iid, count=50):
         """
         since 1.11.0
 
@@ -2274,9 +2340,92 @@ class Connection(object):
         methodName = 'getSimilarSongs2'
         viewName = '%s.view' % methodName
 
-        q = {'id': iid , 'count': count}
+        q = {'id': iid, 'count': count}
 
-        req = self._getRequest(viewName , q)
+        req = self._getRequest(viewName, q)
+        res = self._doInfoReq(req)
+        self._checkStatus(res)
+        return res
+
+    def savePlayQueue(self, qids, current=None, position=None):
+        """
+        since 1.12.0
+
+        qid:list[int]       The list of song ids in the play queue
+        current:int         The id of the current playing song
+        position:int        The position, in milliseconds, within the current
+                            playing song
+
+        Saves the state of the play queue for this user. This includes 
+        the tracks in the play queue, the currently playing track, and 
+        the position within this track. Typically used to allow a user to 
+        move between different clients/apps while retaining the same play 
+        queue (for instance when listening to an audio book).
+        """
+        methodName = 'savePlayQueue'
+        viewName = '%s.view' % methodName
+        if not isinstance(qids, (tuple, list)):
+            qids = [qids]
+
+        q = self._getQueryDict({'current': current, 'position': position})
+        
+        req = self._getRequestWithLists(viewName, {'id': qids}, q)
+        res = self._doInfoReq(req)
+        self._checkStatus(res)
+        return res
+
+    def getPlayQueue(self):
+        """
+        since 1.12.0
+
+        Returns the state of the play queue for this user (as set by 
+        savePlayQueue). This includes the tracks in the play queue, 
+        the currently playing track, and the position within this track. 
+        Typically used to allow a user to move between different 
+        clients/apps while retaining the same play queue (for instance 
+        when listening to an audio book).
+        """
+        methodName = 'getPlayQueue'
+        viewName = '%s.view' % methodName
+        
+        req = self._getRequest(viewName)
+        res = self._doInfoReq(req)
+        self._checkStatus(res)
+        return res
+
+    def getTopSongs(self, artist, count=50):
+        """
+        since 1.13.0
+
+        Returns the top songs for a given artist
+
+        artist:str      The artist to get songs for
+        count:int       The number of songs to return
+        """
+        methodName = 'getTopSongs'
+        viewName = '%s.view' % methodName
+        
+        q = {'artist': artist, 'count': count}
+        
+        req = self._getRequest(viewName, q)
+        res = self._doInfoReq(req)
+        self._checkStatus(res)
+        return res
+
+    def getNewestPodcasts(self, count=20):
+        """
+        since 1.13.0
+
+        Returns the most recently published Podcast episodes
+
+        count:int       The number of episodes to return
+        """
+        methodName = 'getNewestPodcasts'
+        viewName = '%s.view' % methodName
+        
+        q = {'count': count}
+        
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
@@ -2319,55 +2468,73 @@ class Connection(object):
         baseMethod = 'musicFolderSettings'
         viewName = '%s.view' % baseMethod
 
-        url = '%s:%d/%s/%s?%s' % (self._baseUrl , self._port ,
-            self._separateServerPath() , viewName, methodName)
+        url = '%s:%d/%s/%s?%s' % (self._baseUrl, self._port,
+            self._separateServerPath(), viewName, methodName)
         req = urllib2.Request(url)
         res = self._opener.open(req)
         res_msg = res.msg.lower()
         return res_msg == 'ok'
 
+    #
     # Private internal methods
-    def _getOpener(self , username , passwd):
-        creds = b64encode('%s:%s' % (username , passwd))
-        opener = urllib2.build_opener(PysHTTPRedirectHandler ,
-            HTTPSHandlerChain)
-        opener.addheaders = [('Authorization' , 'Basic %s' % creds)]
+    #
+    def _getOpener(self, username, passwd):
+        # Context is only relevent in >= python 2.7.9
+        https_chain = HTTPSHandlerChain()
+        if sys.version_info[:3] >= (2, 7, 9) and self._insecure:
+            https_chain = HTTPSHandlerChain(
+                context=ssl._create_unverified_context())
+        opener = urllib2.build_opener(PysHTTPRedirectHandler, https_chain)
         return opener
 
-    def _getQueryDict(self , d):
+    def _getQueryDict(self, d):
         """
         Given a dictionary, it cleans out all the values set to None
         """
-        for k , v in d.items():
+        for k, v in d.items():
             if v is None:
                 del d[k]
         return d
 
-    def _getRequest(self , viewName , query={}):
-        qstring = {'f': 'json' , 'v': self._apiVersion , 'c': self._appName}
-        qstring.update(query)
-        url = '%s:%d/%s/%s' % (self._baseUrl , self._port , self._serverPath ,
+    def _getBaseQdict(self):
+        salt = self._getSalt()
+        token = md5(self._rawPass + salt).hexdigest()
+        qdict = {
+            'f': 'json',
+            'v': self._apiVersion,
+            'c': self._appName,
+            'u': self._username,
+            's': salt,
+            't': token,
+        }
+
+        return qdict
+
+    def _getRequest(self, viewName, query={}):
+        qdict = self._getBaseQdict()
+        qdict.update(query)
+        url = '%s:%d/%s/%s' % (self._baseUrl, self._port, self._serverPath,
             viewName)
-        req = urllib2.Request(url , urlencode(qstring))
+        req = urllib2.Request(url, urlencode(qdict))
         return req
 
-    def _getRequestWithList(self , viewName , listName , alist , query={}):
+    def _getRequestWithList(self, viewName, listName, alist, query={}):
         """
         Like _getRequest, but allows appending a number of items with the
         same key (listName).  This bypasses the limitation of urlencode()
         """
-        qstring = {'f': 'json' , 'v': self._apiVersion , 'c': self._appName}
-        qstring.update(query)
-        url = '%s:%d/%s/%s' % (self._baseUrl , self._port , self._serverPath ,
+        qdict = self._getBaseQdict()
+        qdict.update(query)
+        url = '%s:%d/%s/%s' % (self._baseUrl, self._port, self._serverPath,
             viewName)
         data = StringIO()
-        data.write(urlencode(qstring))
+        data.write(urlencode(qdict))
         for i in alist:
             data.write('&%s' % urlencode({listName: i}))
-        req = urllib2.Request(url , data.getvalue())
+        req = urllib2.Request(url, data.getvalue())
         return req
 
-    def _getRequestWithLists(self , viewName , listMap , query={}):
+    def _getRequestWithLists(self, viewName, listMap, query={}):
         """
         Like _getRequestWithList(), but you must pass a dictionary
         that maps the listName to the list.  This allows for multiple
@@ -2377,25 +2544,25 @@ class Connection(object):
         listMap:dict        A mapping of listName to a list of entries
         query:dict          The normal query dict
         """
-        qstring = {'f': 'json' , 'v': self._apiVersion , 'c': self._appName}
-        qstring.update(query)
-        url = '%s:%d/%s/%s' % (self._baseUrl , self._port , self._serverPath ,
+        qdict = self._getBaseQdict()
+        qdict.update(query)
+        url = '%s:%d/%s/%s' % (self._baseUrl, self._port, self._serverPath,
             viewName)
         data = StringIO()
-        data.write(urlencode(qstring))
-        for k , l in listMap.iteritems():
+        data.write(urlencode(qdict))
+        for k, l in listMap.iteritems():
             for i in l:
                 data.write('&%s' % urlencode({k: i}))
-        req = urllib2.Request(url , data.getvalue())
+        req = urllib2.Request(url, data.getvalue())
         return req
 
-    def _doInfoReq(self , req):
+    def _doInfoReq(self, req):
         # Returns a parsed dictionary version of the result
         res = self._opener.open(req)
         dres = json.loads(res.read())
         return dres['subsonic-response']
 
-    def _doBinReq(self , req):
+    def _doBinReq(self, req):
         res = self._opener.open(req)
         contType = res.info().getheader('Content-Type')
         if contType:
@@ -2405,14 +2572,14 @@ class Connection(object):
                 return dres['subsonic-response']
         return res
 
-    def _checkStatus(self , result):
+    def _checkStatus(self, result):
         if result['status'] == 'ok':
             return True
         elif result['status'] == 'failed':
             exc = getExcByCode(result['error']['code'])
             raise exc(result['error']['message'])
 
-    def _hexEnc(self , raw):
+    def _hexEnc(self, raw):
         """
         Returns a "hex encoded" string per the Subsonic api docs
 
@@ -2423,7 +2590,7 @@ class Connection(object):
             ret += '%02X' % ord(c)
         return ret
 
-    def _ts2milli(self , ts):
+    def _ts2milli(self, ts):
         """
         For whatever reason, Subsonic uses timestamps in milliseconds since
         the unix epoch.  I have no idea what need there is of this precision,
@@ -2439,3 +2606,53 @@ class Connection(object):
         """
         return urllib2.splithost(self._serverPath)[1].split('/')[0]
 
+    def _fixLastModified(self, data):
+        """
+        This will recursively walk through a data structure and look for
+        a dict key/value pair where the key is "lastModified" and change
+        the shitty java millisecond timestamp to a real unix timestamp
+        of SECONDS since the unix epoch.  JAVA SUCKS!
+        """
+        if isinstance(data, dict):
+            for k, v in data.items():
+                if k == 'lastModified':
+                    data[k] = long(v) / 1000.0
+                    return
+                elif isinstance(v, (tuple, list, dict)):
+                    return self._fixLastModified(v)
+        elif isinstance(data, (list, tuple)):
+            for item in data:
+                if isinstance(item, (list, tuple, dict)):
+                    return self._fixLastModified(item)
+
+    def _process_netrc(self, use_netrc):
+        """
+        The use_netrc var is either a boolean, which means we should use
+        the user's default netrc, or a string specifying a path to a
+        netrc formatted file
+
+        use_netrc:bool|str      Either set to True to use the user's default
+                                netrc file or a string specifying a specific
+                                netrc file to use
+        """
+        if not use_netrc:
+            raise CredentialError('useNetrc must be either a boolean "True" '
+                'or a string representing a path to a netrc file, '
+                'not {0}'.format(repr(use_netrc)))
+        if isinstance(use_netrc, bool) and use_netrc:
+            self._netrc = netrc()
+        else:
+            # This should be a string specifying a path to a netrc file
+            self._netrc = netrc(os.path.expanduser(use_netrc))
+        auth = self._netrc.authenticators(self._hostname)
+        if not auth:
+            raise CredentialError('No machine entry found for {0} in '
+                'your netrc file'.format(self._hostname))
+
+        # If we get here, we have credentials
+        self._username = auth[0]
+        self._rawPass = auth[2]
+
+    def _getSalt(self, length=12):
+        salt = md5(os.urandom(100)).hexdigest()
+        return salt[:length]
