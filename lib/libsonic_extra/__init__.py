@@ -406,7 +406,7 @@ class SubsonicClient(libsonic.Connection):
 
         while True:
             response = self.getAlbumList2(
-                ltype=ltype, size=size, offset=offset, from_year=fromYear, to_year=to_year, genre=genre)
+                ltype=ltype, size=size, offset=offset, fromYear=from_year, toYear=to_year, genre=genre)
 
             if not response["albumList2"]["album"]:
                 break
