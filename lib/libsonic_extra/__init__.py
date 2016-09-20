@@ -391,7 +391,7 @@ class SubsonicClient(libsonic.Connection):
         for genre in response["genres"]["genre"]:
             yield genre
 
-    def walk_album_list(self, ltype, size=10, fromYear=None,toYear=None, genre=None):
+    def walk_album_list(self, ltype, size=10, from_year=None,to_year=None, genre=None):
         """
         Request all albums for a given genre and iterate over each album.
         """
@@ -399,14 +399,14 @@ class SubsonicClient(libsonic.Connection):
         if ltype == 'byGenre' and genre is None:
             return
         
-        if ltype == 'byYear' and (fromYear is None or toYear is None):
+        if ltype == 'byYear' and (from_year is None or to_year is None):
             return
         
         offset = 0
 
         while True:
             response = self.getAlbumList2(
-                ltype=ltype, size=size, offset=offset, fromYear=fromYear, toYear=toYear, genre=genre)
+                ltype=ltype, size=size, offset=offset, from_year=fromYear, to_year=to_year, genre=genre)
 
             if not response["albumList2"]["album"]:
                 break
