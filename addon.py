@@ -221,7 +221,7 @@ class Plugin(object):
 
         xbmcplugin.setContent(self.addon_handle, "albums")
 
-        for album in self.connection.walk_album_list('newest',size,None,None,None):
+        for album in self.connection.walk_album_list('newest',size):
             self.add_album(album, show_artist=True)
 
         xbmcplugin.endOfDirectory(self.addon_handle)
@@ -236,7 +236,7 @@ class Plugin(object):
 
         xbmcplugin.setContent(self.addon_handle, "albums")
 
-        for album in self.connection.walk_album_list('byGenre',size,None,None,genre):
+        for album in self.connection.walk_album_list('byGenre',size,genre=genre):
             self.add_album(album, show_artist=True)
 
         xbmcplugin.endOfDirectory(self.addon_handle)
