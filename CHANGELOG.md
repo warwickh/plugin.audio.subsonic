@@ -1,5 +1,13 @@
 # Changelog
 
+## v2.0.1
+* New setting 'albums_per_page'
+* New menu structure
+* Albums : Newest / Most played / Rencently played / by Genre
+* Tracks : Starred / Random by genre / Random by year
+* Upgraded: libsonic to v.0.5.0 (https://github.com/crustymonkey/py-sonic)
+* Code cleanup
+
 ## v2.0.0
 Released 14 September 2015
 

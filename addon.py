@@ -9,7 +9,7 @@ import xbmcaddon
 import xbmcplugin
 
 # Make sure library folder is on the path
-addon = xbmcaddon.Addon("plugin.audio.subsonic")
+addon = xbmcaddon.Addon()
 sys.path.append(xbmc.translatePath(os.path.join(
     addon.getAddonInfo("path"), "lib")))
 
@@ -31,8 +31,9 @@ class Plugin(object):
         self.username = addon.getSetting("username")
         self.password = addon.getSetting("password")
 
-        self.random_count = int(addon.getSetting("random_count"))
-        self.album_list_size = int(addon.getSetting("album_list_size"))
+        self.albums_per_page = int(addon.getSetting("albums_per_page"))
+        self.tracks_per_page = int(addon.getSetting("tracks_per_page"))
+        
         self.bitrate = int(addon.getSetting("bitrate"))
         self.transcode_format = addon.getSetting("transcode_format")
 
@@ -56,7 +57,7 @@ class Plugin(object):
         parameter and executed the function in this instance with that name.
         """
 
-        mode = self.addon_args.get("mode", ["main_page"])[0]
+        mode = self.addon_args.get("mode", ["main_menu"])[0]
 
         if not mode.startswith("_"):
             getattr(self, mode)()
@@ -145,18 +146,58 @@ class Plugin(object):
         xbmcplugin.addDirectoryItem(
             handle=self.addon_handle, url=url, listitem=li, isFolder=True)
 
-    def main_page(self):
+    def main_menu(self):
         """
         Display main menu.
         """
 
         menu = [
-            {"mode": "starred_list", "foldername": "Starred"},
-            {"mode": "playlists_list", "foldername": "Playlists"},
-            {"mode": "artist_list", "foldername": "Artists"},
-            {"mode": "newest_albums_list", "foldername": "Recently Added Albums"},
-            {"mode": "genre_list", "foldername": "Genres"},
-            {"mode": "random_list", "foldername": "Random songs"}]
+            {"mode": "list_artists", "foldername": "Artists"},
+            {"mode": "menu_albums", "foldername": "Albums"},
+            {"mode": "list_playlists", "foldername": "Playlists"},
+            {"mode": "menu_tracks", "foldername": "Tracks"}
+        ]
+
+        for entry in menu:
+            url = self.build_url(entry)
+
+            li = xbmcgui.ListItem(entry["foldername"])
+            xbmcplugin.addDirectoryItem(
+                handle=self.addon_handle, url=url, listitem=li, isFolder=True)
+
+        xbmcplugin.endOfDirectory(self.addon_handle)
+        
+    def menu_tracks(self):
+        """
+        Display main menu.
+        """
+
+        menu = [
+            {"mode": "list_tracks_starred", "foldername": "Starred tracks"},
+            {"mode": "list_tracks_random_genre", "foldername": "Random tracks by genre"},
+            {"mode": "list_tracks_random_year", "foldername": "Random tracks by year"}
+        ]
+
+        for entry in menu:
+            url = self.build_url(entry)
+
+            li = xbmcgui.ListItem(entry["foldername"])
+            xbmcplugin.addDirectoryItem(
+                handle=self.addon_handle, url=url, listitem=li, isFolder=True)
+
+        xbmcplugin.endOfDirectory(self.addon_handle)
+            
+    def menu_albums(self):
+        """
+        Display main menu.
+        """
+
+        menu = [
+            {"mode": "list_albums_newest", "foldername": "Newest albums"},
+            {"mode": "list_albums_frequent", "foldername": "Most played albums"},
+            {"mode": "list_albums_recent", "foldername": "Recently played albums"},
+            {"mode": "list_albums_genre", "foldername": "Albums by Genre"}
+        ]
 
         for entry in menu:
             url = self.build_url(entry)
@@ -167,19 +208,7 @@ class Plugin(object):
 
         xbmcplugin.endOfDirectory(self.addon_handle)
 
-    def starred_list(self):
-        """
-        Display starred songs.
-        """
-
-        xbmcplugin.setContent(self.addon_handle, "songs")
-
-        for starred in self.connection.walk_starred():
-            self.add_track(starred, show_artist=True)
-
-        xbmcplugin.endOfDirectory(self.addon_handle)
-
-    def playlists_list(self):
+    def list_playlists(self):
         """
         Display playlists.
         """
@@ -188,75 +217,124 @@ class Plugin(object):
             cover_art_url = self.connection.getCoverArtUrl(
                 playlist["coverArt"])
             url = self.build_url({
-                "mode": "playlist_list", "playlist_id": playlist["id"]})
+                "mode": "list_playlist_songs", "playlist_id": playlist["id"]})
 
             li = xbmcgui.ListItem(playlist["name"], iconImage=cover_art_url)
             xbmcplugin.addDirectoryItem(
                 handle=self.addon_handle, url=url, listitem=li, isFolder=True)
 
         xbmcplugin.endOfDirectory(self.addon_handle)
-
-    def genre_list(self):
+        
+    def list_playlist_songs(self):
         """
-        Display list of genres menu.
+        Display playlist tracks.
         """
 
-        for genre in self.connection.walk_genres():
-            url = self.build_url({
-                "mode": "albums_by_genre_list",
-                "foldername": genre["value"].encode("utf-8")})
+        playlist_id = self.addon_args["playlist_id"][0]
 
-            li = xbmcgui.ListItem(genre["value"])
-            xbmcplugin.addDirectoryItem(
-                handle=self.addon_handle, url=url, listitem=li, isFolder=True)
+        xbmcplugin.setContent(self.addon_handle, "songs")
+
+        for track in self.connection.walk_playlist(playlist_id):
+            self.add_track(track, show_artist=True)
+
+        xbmcplugin.endOfDirectory(self.addon_handle)
+
+    def list_albums_genre(self):
+        """
+        Display albums by genre list.
+        """
+
+        genres = self.connection.walk_genres()
+        genres_sorted = sorted(genres, key=lambda k: k['value']) 
+
+        for genre in genres_sorted:
+            
+            try:
+            
+                genre_slug = genre["value"]
+                genre_name = genre_slug.replace(';',' / ')
+                genre_count = int(genre["albumCount"])
+                
+                if genre_count == 0:
+                    continue
+                
+                
+                genre_name += ' (' + str(genre_count) + ')'
+
+                url = self.build_url({
+                    "mode": 'album_list_genre',
+                    "foldername": genre_slug.encode("utf-8")})
+
+                li = xbmcgui.ListItem(genre_name)
+                xbmcplugin.addDirectoryItem(
+                    handle=self.addon_handle, url=url, listitem=li, isFolder=True)
+                
+            except:
+                pass
+            
+                
 
         xbmcplugin.endOfDirectory(self.addon_handle)
         
-    def newest_albums_list(self):
+    def list_albums_newest(self):
         """
         Display newest album list.
         """
-
-        size = self.album_list_size
+        
+        size = self.albums_per_page
 
         xbmcplugin.setContent(self.addon_handle, "albums")
 
-        for album in self.connection.walk_album_list('newest',size,None,None,None):
+        for album in self.connection.walk_albums(ltype='newest',size=size):
+            self.add_album(album, show_artist=True)
+
+        xbmcplugin.endOfDirectory(self.addon_handle)
+
+    def list_albums_frequent(self):
+        """
+        Display most played albums list.
+        """
+        
+        size = self.albums_per_page
+
+        xbmcplugin.setContent(self.addon_handle, "albums")
+
+        for album in self.connection.walk_albums(ltype='frequent',size=size):
             self.add_album(album, show_artist=True)
 
         xbmcplugin.endOfDirectory(self.addon_handle)
         
-    def albums_by_genre_list(self):
+    def list_albums_recent(self):
         """
-        Display album list by genre menu.
+        Display recently played album list.
         """
-
-        size = self.album_list_size
-        genre = self.addon_args["foldername"][0].decode("utf-8")
+        
+        size = self.albums_per_page
 
         xbmcplugin.setContent(self.addon_handle, "albums")
 
-        for album in self.connection.walk_album_list('byGenre',size,None,None,genre):
+        for album in self.connection.walk_albums(ltype='recent',size=size):
+            self.add_album(album, show_artist=True)
+
+        xbmcplugin.endOfDirectory(self.addon_handle)
+        
+
+    def album_list_genre(self):
+        """
+        Display album list by genre menu.
+        """
+        
+        genre = self.addon_args["foldername"][0].decode("utf-8")
+        size = self.albums_per_page
+
+        xbmcplugin.setContent(self.addon_handle, "albums")
+
+        for album in self.connection.walk_albums(ltype='byGenre',size=size,genre=genre):
             self.add_album(album, show_artist=True)
 
         xbmcplugin.endOfDirectory(self.addon_handle)
 
-    def albums_by_genre_list(self):
-        """
-        Display album list by genre menu.
-        """
-
-        size = self.album_list_size
-        genre = self.addon_args["foldername"][0].decode("utf-8")
-
-        xbmcplugin.setContent(self.addon_handle, "albums")
-
-        for album in self.connection.walk_album_list('byGenre',size,None,None,genre):
-            self.add_album(album, show_artist=True)
-
-        xbmcplugin.endOfDirectory(self.addon_handle)
-
-    def artist_list(self):
+    def list_artists(self):
         """
         Display artist list
         """
@@ -315,25 +393,20 @@ class Plugin(object):
 
         xbmcplugin.endOfDirectory(self.addon_handle)
 
-    def random_list(self):
+
+    def list_tracks_starred(self):
         """
-        Display random options.
+        Display starred songs.
         """
 
-        menu = [
-            {"mode": "random_by_genre_list", "foldername": "By genre"},
-            {"mode": "random_by_year_list", "foldername": "By year"}]
+        xbmcplugin.setContent(self.addon_handle, "songs")
 
-        for entry in menu:
-            url = self.build_url(entry)
-
-            li = xbmcgui.ListItem(entry["foldername"])
-            xbmcplugin.addDirectoryItem(
-                handle=self.addon_handle, url=url, listitem=li, isFolder=True)
+        for starred in self.connection.walk_tracks_starred():
+            self.add_track(starred, show_artist=True)
 
         xbmcplugin.endOfDirectory(self.addon_handle)
-
-    def random_by_genre_list(self):
+        
+    def list_tracks_random_genre(self):
         """
         Display random genre list.
         """
@@ -358,13 +431,13 @@ class Plugin(object):
 
         xbmcplugin.setContent(self.addon_handle, "songs")
 
-        for track in self.connection.walk_random_songs(
-                size=self.random_count, genre=genre):
+        for track in self.connection.walk_tracks_random(
+                size=self.tracks_per_page, genre=genre):
             self.add_track(track, show_artist=True)
 
         xbmcplugin.endOfDirectory(self.addon_handle)
 
-    def random_by_year_list(self):
+    def list_tracks_random_year(self):
         """
         Display random tracks by year.
         """
@@ -376,8 +449,8 @@ class Plugin(object):
 
         xbmcplugin.setContent(self.addon_handle, "songs")
 
-        for track in self.connection.walk_random_songs(
-                size=self.random_count, from_year=from_year, to_year=to_year):
+        for track in self.connection.walk_tracks_random(
+                size=self.tracks_per_page, from_year=from_year, to_year=to_year):
             self.add_track(track, show_artist=True)
 
         xbmcplugin.endOfDirectory(self.addon_handle)

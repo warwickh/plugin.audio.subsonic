@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <settings>
-    <setting id="subsonic_url" type="text" label="URL" default="http://demo.subsonic.org"/>
+    <category label="Server">
+    <setting id="subsonic_url" type="text" label="Server URL" default="http://demo.subsonic.org"/>
     <setting id="username" type="text" label="Username" default="guest3"/>
     <setting id="password" type="text" option="hidden" label="Password" default="guest"/>
-    <setting id="random_count" type="labelenum" label="Random songs" values="10|15|20|25"/>
-    <setting id="album_list_size" type="labelenum" label="Albums list items" default="50" values="50|100|200|250|500"/>
+    <setting type="sep" />
+    <setting id="albums_per_page" type="labelenum" label="Albums per page" default="50" values="10|25|50|100|250|500"/>
+    <setting id="tracks_per_page" type="labelenum" label="Tracks per page" default="100" values="10|25|50|100|250|500"/>
+    <setting type="sep" />
     <setting id="transcode_format" type="labelenum" label="Transcode format" values="mp3|raw|flv|ogg"/>
     <setting id="bitrate" type="labelenum" label="Bitrate" values="320|256|224|192|160|128|112|96|80|64|56|48|40|32"/>
+    </category>
 </settings>
