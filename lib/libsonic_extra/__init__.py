@@ -2,7 +2,6 @@ import urllib
 import urlparse
 import libsonic
 
-
 def force_list(value):
     """
     Coerce the input value to a list.
@@ -336,16 +335,6 @@ class SubsonicClient(libsonic.Connection):
         for child in response["playlist"]["entry"]:
             yield child
 
-    def walk_starred(self):
-        """
-        Request Subsonic's starred songs and iterate over each item.
-        """
-
-        response = self.getStarred()
-
-        for song in response["starred"]["song"]:
-            yield song
-
     def walk_directory(self, directory_id):
         """
         Request a Subsonic music directory and iterate over each item.
@@ -391,7 +380,7 @@ class SubsonicClient(libsonic.Connection):
         for genre in response["genres"]["genre"]:
             yield genre
 
-    def walk_album_list(self, ltype, size=10, from_year=None,to_year=None, genre=None):
+    def walk_albums(self, ltype, size=None, from_year=None,to_year=None, genre=None):
         """
         Request all albums for a given genre and iterate over each album.
         """
@@ -402,11 +391,11 @@ class SubsonicClient(libsonic.Connection):
         if ltype == 'byYear' and (from_year is None or to_year is None):
             return
         
-        offset = 0
+        offset = 0 
 
         while True:
             response = self.getAlbumList2(
-                ltype=ltype, size=size, offset=offset, fromYear=from_year, toYear=to_year, genre=genre)
+                ltype=ltype, genre=genre, size=size, offset=offset)
 
             if not response["albumList2"]["album"]:
                 break
@@ -426,8 +415,7 @@ class SubsonicClient(libsonic.Connection):
         for song in response["album"]["song"]:
             yield song
 
-    def walk_random_songs(self, size, genre=None, from_year=None,
-                          to_year=None):
+    def walk_tracks_random(self, size, genre=None, from_year=None,to_year=None):
         """
         Request random songs by genre and/or year and iterate over each song.
         """
@@ -436,4 +424,15 @@ class SubsonicClient(libsonic.Connection):
             size=size, genre=genre, fromYear=from_year, toYear=to_year)
 
         for song in response["randomSongs"]["song"]:
+            yield song
+            
+
+    def walk_tracks_starred(self):
+        """
+        Request Subsonic's starred songs and iterate over each item.
+        """
+
+        response = self.getStarred()
+
+        for song in response["starred"]["song"]:
             yield song
