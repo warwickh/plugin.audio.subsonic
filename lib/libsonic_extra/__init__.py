@@ -34,7 +34,7 @@ class SubsonicClient(libsonic.Connection):
     - Add conventient `walk_*' methods to iterate over the API responses.
     """
 
-    def __init__(self, url, username, password, apiversion):
+    def __init__(self, url, username, password, apiversion, insecure):
         """
         Construct a new SubsonicClient.
 
@@ -64,7 +64,7 @@ class SubsonicClient(libsonic.Connection):
 
         # Invoke original constructor
         super(SubsonicClient, self).__init__(
-            host, username, password, port=port, apiVersion=apiversion)
+            host, username, password, port=port, apiVersion=apiversion, insecure=insecure)
 
     def getIndexes(self, *args, **kwargs):
         """

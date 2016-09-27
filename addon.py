@@ -31,6 +31,7 @@ class Plugin(object):
         self.username = addon.getSetting("username")
         self.password = addon.getSetting("password")
         self.apiversion = addon.getSetting("apiversion")
+        self.insecure = addon.getSetting("insecure") == "true"
 
         self.random_count = addon.getSetting("random_count")
         self.bitrate = addon.getSetting("bitrate")
@@ -38,7 +39,7 @@ class Plugin(object):
 
         # Create connection
         self.connection = libsonic_extra.SubsonicClient(
-            self.url, self.username, self.password, self.apiversion)
+            self.url, self.username, self.password, self.apiversion, self.insecure)
 
     def build_url(self, query):
         """
