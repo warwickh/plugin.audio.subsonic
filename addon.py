@@ -2,6 +2,7 @@ import os
 import sys
 import urllib
 import urlparse
+from HTMLParser import HTMLParser
 
 import xbmc
 import xbmcgui
@@ -81,7 +82,7 @@ class Plugin(object):
             title = track.get("title", "<Unknown>")
 
         # Create item
-        li = xbmcgui.ListItem(title)
+        li = xbmcgui.ListItem(self._encode(title))
 
         # Handle cover art
         if "coverArt" in track:
@@ -95,8 +96,8 @@ class Plugin(object):
         li.setProperty("IsPlayable", "true")
         li.setMimeType(track.get("contentType"))
         li.setInfo(type="Music", infoLabels={
-            "Artist": track.get("artist"),
-            "Title": track.get("title"),
+            "Artist": self._encode(track.get("artist")),
+            "Title": self._encode(track.get("title")),
             "Year": track.get("year"),
             "Duration": track.get("duration"),
             "Genre": track.get("genre"),
@@ -128,7 +129,7 @@ class Plugin(object):
 
         # Create item
         li = xbmcgui.ListItem()
-        li.setLabel(title)
+        li.setLabel(self._encode(title))
 
         # Handle cover art
         if "coverArt" in album:
@@ -140,8 +141,8 @@ class Plugin(object):
 
         # Handle metadata
         li.setInfo(type="music", infoLabels={
-            "Artist": album.get("artist"),
-            "Album": album.get("name"),
+            "Artist": self._encode(album.get("artist")),
+            "Album": self._encode(album.get("name")),
             "Year": album.get("year")})
 
         xbmcplugin.addDirectoryItem(
@@ -254,7 +255,7 @@ class Plugin(object):
                 "mode": "album_list",
                 "artist_id": artist["id"]})
 
-            li = xbmcgui.ListItem(artist["name"])
+            li = xbmcgui.ListItem(self._encode(artist["name"]))
             li.setIconImage(cover_art_url)
             li.setThumbnailImage(cover_art_url)
             li.setProperty("fanart_image", cover_art_url)
@@ -367,6 +368,13 @@ class Plugin(object):
 
         xbmcplugin.endOfDirectory(self.addon_handle)
 
+
+    def _encode(self, name):
+        """
+        Converts html encoding into unicode
+        """
+
+        return HTMLParser().unescape(str(name)).encode('utf-8')
 
 def main():
     """
