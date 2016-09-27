@@ -3,6 +3,7 @@
     <setting id="subsonic_url" type="text" label="URL" default="http://demo.subsonic.org"/>
     <setting id="username" type="text" label="Username" default="guest3"/>
     <setting id="password" type="text" option="hidden" label="Password" default="guest"/>
+    <setting id="apiversion" type="labelenum" label="API version" values="1.11.0|1.12.0|1.13.0|1.14.0" default="1.13.0"/>
     <setting id="random_count" type="labelenum" label="Random songs" values="10|15|20|25"/>
     <setting id="transcode_format" type="labelenum" label="Transcode format" values="mp3|raw|flv|ogg"/>
     <setting id="bitrate" type="labelenum" label="Bitrate" values="320|256|224|192|160|128|112|96|80|64|56|48|40|32"/>
