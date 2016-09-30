@@ -23,7 +23,7 @@ from netrc import netrc
 from hashlib import md5
 import json, urllib2, httplib, logging, socket, ssl, sys, os
 
-API_VERSION = '1.13.0'
+API_VERSION = '1.14.0'
 
 logger = logging.getLogger(__name__)
 
@@ -98,7 +98,7 @@ class PysHTTPRedirectHandler(urllib2.HTTPRedirectHandler):
 class Connection(object):
     def __init__(self, baseUrl, username=None, password=None, port=4040,
             serverPath='/rest', appName='py-sonic', apiVersion=API_VERSION,
-            insecure=False, useNetrc=None):
+            insecure=False, useNetrc=None, legacyAuth=False, useGET=False):
         """
         This will create a connection to your subsonic server
 
@@ -155,12 +155,17 @@ class Connection(object):
         useNetrc:str|bool   You can either specify a specific netrc
                             formatted file or True to use your default
                             netrc file ($HOME/.netrc).
-
+        legacyAuth:bool     Use pre-1.13.0 API version authentication
+        useGET:bool         Use a GET request instead of the default POST
+                            request.  This is not recommended as request
+                            URLs can get very long with some API calls
         """
         self._baseUrl = baseUrl
         self._hostname = baseUrl.split('://')[1].strip()
         self._username = username
         self._rawPass = password
+        self._legacyAuth = legacyAuth
+        self._useGET = useGET
 
         self._netrc = None
         if useNetrc is not None:
@@ -211,6 +216,14 @@ class Connection(object):
     def setInsecure(self, insecure):
         self._insecure = insecure
     insecure = property(lambda s: s._insecure, setInsecure)
+
+    def setLegacyAuth(self, lauth):
+        self._legacyAuth = lauth
+    legacyAuth = property(lambda s: s._legacyAuth, setLegacyAuth)
+
+    def setGET(self, get):
+        self._useGET = get
+    useGET = property(lambda s: s._useGET, setGET)
 
     # API methods
     def ping(self):
@@ -747,7 +760,7 @@ class Connection(object):
         return res
 
     def stream(self, sid, maxBitRate=0, tformat=None, timeOffset=None,
-            size=None, estimateContentLength=False):
+            size=None, estimateContentLength=False, converted=False):
         """
         since: 1.0.0
 
@@ -772,6 +785,12 @@ class Connection(object):
                                     the HTTP Content-Length header
                                     will be set to an estimated
                                     value for trancoded media
+        converted:bool  (since: 1.14.0) Only applicable to video streaming.
+                        Subsonic can optimize videos for streaming by
+                        converting them to MP4. If a conversion exists for
+                        the video in question, then setting this parameter
+                        to "true" will cause the converted video to be
+                        returned instead of the original.
 
         Returns the file-like object for reading or raises an exception
         on error
@@ -781,7 +800,8 @@ class Connection(object):
 
         q = self._getQueryDict({'id': sid, 'maxBitRate': maxBitRate,
             'format': tformat, 'timeOffset': timeOffset, 'size': size,
-            'estimateContentLength': estimateContentLength})
+            'estimateContentLength': estimateContentLength,
+            'converted': converted})
 
         req = self._getRequest(viewName, q)
         res = self._doBinReq(req)
@@ -2458,6 +2478,77 @@ class Connection(object):
         methodName = 'expunge'
         return self._unsupportedAPIFunction(methodName)
 
+    def getVideoInfo(self, vid):
+        """
+        since 1.14.0
+
+        Returns details for a video, including information about available
+        audio tracks, subtitles (captions) and conversions.
+
+        vid:int     The video ID
+        """
+        methodName = 'getVideoInfo'
+        viewName = '%s.view' % methodName
+
+        q = {'id': int(vid)}
+        req = self._getRequest(viewName, q)
+        res = self._doInfoReq(req)
+        self._checkStatus(res)
+        return res
+
+    def getAlbumInfo(self, aid):
+        """
+        since 1.14.0
+
+        Returns the album notes, image URLs, etc., using data from last.fm
+
+        aid:int     The album ID
+        """
+        methodName = 'getAlbumInfo'
+        viewName = '%s.view' % methodName
+
+        q = {'id': int(aid)}
+        req = self._getRequest(viewName, q)
+        res = self._doInfoReq(req)
+        self._checkStatus(res)
+        return res
+
+    def getAlbumInfo2(self, aid):
+        """
+        since 1.14.0
+
+        Same as getAlbumInfo, but uses ID3 tags
+
+        aid:int     The album ID
+        """
+        methodName = 'getAlbumInfo2'
+        viewName = '%s.view' % methodName
+
+        q = {'id': int(aid)}
+        req = self._getRequest(viewName, q)
+        res = self._doInfoReq(req)
+        self._checkStatus(res)
+        return res
+
+    def getCaptions(self, vid, fmt=None):
+        """
+        since 1.14.0
+
+        Returns captions (subtitles) for a video.  Use getVideoInfo for a list
+        of captions.
+
+        vid:int         The ID of the video
+        fmt:str         Preferred captions format ("srt" or "vtt")
+        """
+        methodName = 'getCaptions'
+        viewName = '%s.view' % methodName
+
+        q = self._getQueryDict({'id': int(vid), 'format': fmt})
+        req = self._getRequest(viewName, q)
+        res = self._doInfoReq(req)
+        self._checkStatus(res)
+        return res
+
     def _unsupportedAPIFunction(self, methodName):
         """
         base function to call unsupported API methods
@@ -2497,16 +2588,22 @@ class Connection(object):
         return d
 
     def _getBaseQdict(self):
-        salt = self._getSalt()
-        token = md5(self._rawPass + salt).hexdigest()
         qdict = {
             'f': 'json',
             'v': self._apiVersion,
             'c': self._appName,
             'u': self._username,
-            's': salt,
-            't': token,
         }
+
+        if self._legacyAuth:
+            qdict['p'] = 'enc:%s' % self._hexEnc(self._rawPass)
+        else:
+            salt = self._getSalt()
+            token = md5(self._rawPass + salt).hexdigest()
+            qdict.update({
+                's': salt,
+                't': token,
+            })
 
         return qdict
 
@@ -2516,6 +2613,11 @@ class Connection(object):
         url = '%s:%d/%s/%s' % (self._baseUrl, self._port, self._serverPath,
             viewName)
         req = urllib2.Request(url, urlencode(qdict))
+
+        if self._useGET:
+            url += '?%s' % urlencode(qdict)
+            req = urllib2.Request(url)
+
         return req
 
     def _getRequestWithList(self, viewName, listName, alist, query={}):
@@ -2532,6 +2634,11 @@ class Connection(object):
         for i in alist:
             data.write('&%s' % urlencode({listName: i}))
         req = urllib2.Request(url, data.getvalue())
+
+        if self._useGET:
+            url += '?%s' % data.getvalue()
+            req = urllib2.Request(url)
+
         return req
 
     def _getRequestWithLists(self, viewName, listMap, query={}):
@@ -2554,6 +2661,11 @@ class Connection(object):
             for i in l:
                 data.write('&%s' % urlencode({k: i}))
         req = urllib2.Request(url, data.getvalue())
+
+        if self._useGET:
+            url += '?%s' % data.getvalue()
+            req = urllib2.Request(url)
+
         return req
 
     def _doInfoReq(self, req):

@@ -1,0 +1,3 @@
+[submodule "lib/py-sonic"]
+	path = lib/py-sonic
+	url = https://github.com/crustymonkey/py-sonic.git
