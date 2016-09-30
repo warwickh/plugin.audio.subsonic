@@ -306,7 +306,7 @@ class Plugin(object):
         size = self.albums_per_page
         offset = size * ( page -1 )
 
-        xbmcplugin.setContent(self.addon_handle, "albums")
+        xbmcplugin.setContent(self.addon_handle,"albums")
 
         for album in self.connection.walk_albums(ltype='newest',size=size,offset=offset):
             self.add_album(album, show_artist=True)
@@ -325,7 +325,7 @@ class Plugin(object):
         size = self.albums_per_page
         offset = size * ( page -1 )
 
-        xbmcplugin.setContent(self.addon_handle, "albums")
+        xbmcplugin.setContent(self.addon_handle,"albums")
 
         for album in self.connection.walk_albums(ltype='frequent',size=size,offset=offset):
             self.add_album(album, show_artist=True)
@@ -344,7 +344,7 @@ class Plugin(object):
         size = self.albums_per_page
         offset = size * ( page -1 )
 
-        xbmcplugin.setContent(self.addon_handle, "albums")
+        xbmcplugin.setContent(self.addon_handle,"albums")
 
         for album in self.connection.walk_albums(ltype='recent',size=size):
             self.add_album(album, show_artist=True)
@@ -363,7 +363,7 @@ class Plugin(object):
         genre = self.addon_args["foldername"][0].decode("utf-8")
         size = self.albums_per_page
 
-        xbmcplugin.setContent(self.addon_handle, "albums")
+        xbmcplugin.setContent(self.addon_handle,"albums")
 
         for album in self.connection.walk_albums(ltype='byGenre',size=size,genre=genre):
             self.add_album(album, show_artist=True)
@@ -399,7 +399,7 @@ class Plugin(object):
 
         artist_id = self.addon_args["artist_id"][0]
 
-        xbmcplugin.setContent(self.addon_handle, "albums")
+        xbmcplugin.setContent(self.addon_handle,"albums")
 
         for album in self.connection.walk_artist(artist_id):
             self.add_album(album)
