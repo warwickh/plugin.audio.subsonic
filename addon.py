@@ -193,9 +193,9 @@ class Plugin(object):
         """
 
         menu = [
-            {"mode": "list_albums_newest", "foldername": "Newest albums"},
-            {"mode": "list_albums_frequent", "foldername": "Most played albums"},
-            {"mode": "list_albums_recent", "foldername": "Recently played albums"},
+            {"mode": "list_albums_newest", "foldername": "Newest albums", "page":1},
+            {"mode": "list_albums_frequent", "foldername": "Most played albums", "page":1},
+            {"mode": "list_albums_recent", "foldername": "Recently played albums", "page":1},
             {"mode": "list_albums_genre", "foldername": "Albums by Genre"}
         ]
 
@@ -207,6 +207,27 @@ class Plugin(object):
                 handle=self.addon_handle, url=url, listitem=li, isFolder=True)
 
         xbmcplugin.endOfDirectory(self.addon_handle)
+        
+    def menu_link(self):
+        mode = self.addon_args["mode"][0]
+        menu_item = {"mode": "main_menu", "foldername": "Back to Menu"}
+        menu_item_url = self.build_url(menu_item)
+        menu_item_li = xbmcgui.ListItem(menu_item["foldername"])
+        xbmcplugin.addDirectoryItem(
+            handle=self.addon_handle, url=menu_item_url, listitem=menu_item_li, isFolder=True)
+
+    def next_page_link(self,page):
+
+        page += 1
+        title = "Next page (%s)" % (page)
+        
+        mode = self.addon_args["mode"][0]
+        
+        menu_item = {"mode": mode, "foldername": title, "page":page}
+        menu_item_url = self.build_url(menu_item)
+        menu_item_li = xbmcgui.ListItem(menu_item["foldername"])
+        xbmcplugin.addDirectoryItem(
+            handle=self.addon_handle, url=menu_item_url, listitem=menu_item_li, isFolder=True)
 
     def list_playlists(self):
         """
@@ -280,13 +301,18 @@ class Plugin(object):
         """
         Display newest album list.
         """
-        
+
+        page = int(self.addon_args["page"][0])
         size = self.albums_per_page
+        offset = size * ( page -1 )
 
         xbmcplugin.setContent(self.addon_handle, "albums")
 
-        for album in self.connection.walk_albums(ltype='newest',size=size):
+        for album in self.connection.walk_albums(ltype='newest',size=size,offset=offset):
             self.add_album(album, show_artist=True)
+            
+        self.next_page_link(page)
+        self.menu_link()
 
         xbmcplugin.endOfDirectory(self.addon_handle)
 
@@ -295,12 +321,17 @@ class Plugin(object):
         Display most played albums list.
         """
         
+        page = int(self.addon_args["page"][0])
         size = self.albums_per_page
+        offset = size * ( page -1 )
 
         xbmcplugin.setContent(self.addon_handle, "albums")
 
-        for album in self.connection.walk_albums(ltype='frequent',size=size):
+        for album in self.connection.walk_albums(ltype='frequent',size=size,offset=offset):
             self.add_album(album, show_artist=True)
+            
+        self.next_page_link(page)
+        self.menu_link()
 
         xbmcplugin.endOfDirectory(self.addon_handle)
         
@@ -309,12 +340,17 @@ class Plugin(object):
         Display recently played album list.
         """
         
+        page = int(self.addon_args["page"][0])
         size = self.albums_per_page
+        offset = size * ( page -1 )
 
         xbmcplugin.setContent(self.addon_handle, "albums")
 
         for album in self.connection.walk_albums(ltype='recent',size=size):
             self.add_album(album, show_artist=True)
+            
+        self.next_page_link(page)
+        self.menu_link()
 
         xbmcplugin.endOfDirectory(self.addon_handle)
         
