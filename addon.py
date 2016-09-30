@@ -30,6 +30,7 @@ class Plugin(object):
         self.url = addon.getSetting("subsonic_url")
         self.username = addon.getSetting("username")
         self.password = addon.getSetting("password")
+        self.apiversion = addon.getSetting("apiversion")
 
         self.albums_per_page = int(addon.getSetting("albums_per_page"))
         self.tracks_per_page = int(addon.getSetting("tracks_per_page"))
@@ -39,7 +40,7 @@ class Plugin(object):
 
         # Create connection
         self.connection = libsonic_extra.SubsonicClient(
-            self.url, self.username, self.password)
+            self.url, self.username, self.password, self.apiversion)
 
     def build_url(self, query):
         """

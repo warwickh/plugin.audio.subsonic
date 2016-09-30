@@ -4,6 +4,7 @@
     <setting id="subsonic_url" type="text" label="Server URL" default="http://demo.subsonic.org"/>
     <setting id="username" type="text" label="Username" default="guest3"/>
     <setting id="password" type="text" option="hidden" label="Password" default="guest"/>
+    <setting id="apiversion" type="labelenum" label="API version" values="1.11.0|1.12.0|1.13.0|1.14.0" default="1.13.0"/>
     <setting type="sep" />
     <setting id="albums_per_page" type="labelenum" label="Albums per page" default="50" values="10|25|50|100|250|500"/>
     <setting id="tracks_per_page" type="labelenum" label="Tracks per page" default="100" values="10|25|50|100|250|500"/>
