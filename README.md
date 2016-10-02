@@ -1,4 +1,4 @@
-# Subsonic for Kodi
+# Kodisonic
 Kodi plugin to stream music from Subsonic.
 
 ## Features
@@ -15,5 +15,5 @@ Kodi plugin to stream music from Subsonic.
 See the `LICENSE` file.
 
 Additional copyright notices:
-* The original [SubKodi](https://github.com/DarkAllMan/SubKodi) plugin.
+* The original [Subsonic](https://github.com/basilfx/plugin.audio.subsonic) plugin by basilfx.
 * [`py-sonic`](https://github.com/crustymonkey/py-sonic) Python module.
