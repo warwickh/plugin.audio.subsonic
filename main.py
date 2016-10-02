@@ -38,6 +38,9 @@ def get_connection():
     global connection
     
     if connection is None:
+        
+        connected = False
+        
         # Create connection
 
         try:
