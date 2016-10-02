@@ -1,4 +1,4 @@
-# Kodisonic
+# Subsonic
 Kodi plugin to stream music from Subsonic.
 
 ## Features
