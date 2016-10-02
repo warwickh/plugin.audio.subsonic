@@ -24,7 +24,7 @@ plugin = Plugin()
 
 
 # initialize_gettext
-#_ = plugin.initialize_gettext() //https://github.com/romanvm/script.module.simpleplugin/issues/1
+#_ = plugin.initialize_gettext()
 
 connection = None
 cache_minutes = int(Addon().get_setting('cache_minutes'))
@@ -62,7 +62,8 @@ def get_connection():
 
     return connection
 
-def menu_root(params):
+@plugin.action()
+def root(params):
     
     # get connection
     connection = get_connection()
@@ -120,6 +121,7 @@ def menu_root(params):
         #content = None #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
     )
 
+@plugin.action()
 def menu_albums(params):
     
     # get connection
@@ -181,6 +183,7 @@ def menu_albums(params):
         #content = None #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
     )
 
+@plugin.action()
 def menu_tracks(params):
     
     # get connection
@@ -226,6 +229,7 @@ def menu_tracks(params):
         #content = None #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
     )
 
+@plugin.action()
 @plugin.cached(cache_minutes) #if cache is enabled, cache data for the following function
 def list_artists(params):
     
@@ -272,6 +276,7 @@ def list_artists(params):
         content = 'artists' #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
     )
 
+@plugin.action()
 @plugin.cached(cache_minutes) #if cache is enabled, cache data for the following function
 def list_albums(params):
     
@@ -342,6 +347,7 @@ def list_albums(params):
         content = 'albums' #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
     )
 
+@plugin.action()
 @plugin.cached(cache_minutes) #if cache is enabled, cache data for the following function
 def list_artist_albums(params):
     
@@ -401,7 +407,7 @@ def get_album_entry(item, params):
         },
     }
 
-
+@plugin.action()
 @plugin.cached(cache_minutes) #if cache is enabled, cache data for the following function
 def list_tracks(params):
 
@@ -502,7 +508,7 @@ def get_track_entry(item,params):
             }},
         }
 
-
+@plugin.action()
 def play_track(params):
     
     id = params['id']
@@ -545,7 +551,7 @@ def convert_date_from_iso8601(iso8601):
     date_obj = dateutil.parser.parse(iso8601)
     return date_obj.strftime('%d.%m.%Y')
 
-
+@plugin.action()
 @plugin.cached(cache_minutes) #if cache is enabled, cache data for the following function
 def list_playlists(params):
     
@@ -591,14 +597,6 @@ def list_playlists(params):
 if __name__ == "__main__":
     # Map actions
     # Note that we map callable objects without brackets ()
-    plugin.actions['root'] = menu_root  # - optional if we have a function named 'root'
-    plugin.actions['menu_albums'] = menu_albums
-    plugin.actions['list_artists'] = list_artists
-    plugin.actions['list_artist_albums'] = list_artist_albums
-    plugin.actions['list_albums'] = list_albums
-    plugin.actions['menu_tracks'] = menu_tracks
-    plugin.actions['list_tracks'] = list_tracks
-    plugin.actions['play_track'] = play_track
     plugin.actions['list_playlists'] = list_playlists
     plugin.run()
 
