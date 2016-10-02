@@ -8,7 +8,7 @@ Kodi plugin to stream music from Subsonic.
 
 ## Installation
 * Navigate to your `.kodi/addons/` folder
-* Clone this repository: `git clone https://github.com/basilfx/plugin.audio.subsonic.git`
+* Clone this repository: `git clone https://github.com/gordielachance/plugin.audio.subsonic.git`
 * (Re)start Kodi.
 
 ## License

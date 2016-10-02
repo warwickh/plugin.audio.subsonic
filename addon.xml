@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.audio.subsonic" name="Subsonic" version="2.0.1" provider-name="BasilFX,grosbouff,lrusak">
-    <requires>
-        <import addon="xbmc.python" version="2.19.0"/>
-    </requires>
-    <extension point="xbmc.python.pluginsource" library="addon.py">
-        <provides>audio</provides>
-    </extension>
+<addon id="plugin.audio.subsonic" name="Subsonic" version="2.0.2" provider-name="BasilFX,grosbouff,lrusak">
+<requires>
+    <import addon="xbmc.python" version="2.14.0"/>
+    <import addon="script.module.dateutil" version="2.4.2"/>
+    <import addon="script.module.simpleplugin" version="2.0.1"/>
+    
+</requires>
+<extension point="xbmc.python.pluginsource" library="main.py">
+  <provides>audio</provides>
+</extension>
     <extension point="xbmc.addon.metadata">
         <summary lang="en">Subsonic music addon for Kodi.</summary>
         <description lang="en">Subsonic music addon for Kodi. Stream your tunes directly to Kodi.</description>
@@ -15,7 +18,7 @@
         <license>MIT</license>
         <forum></forum>
         <website>http://www.subsonic.org</website>
-        <source>https://github.com/basilfx/plugin.audio.subsonic</source>
+        <source>https://github.com/gordielachance/plugin.audio.subsonic</source>
         <email></email>
     </extension>
 </addon>

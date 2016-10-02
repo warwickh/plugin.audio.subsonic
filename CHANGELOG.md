@@ -1,5 +1,8 @@
 # Changelog
 
+## v2.0.2
+* Use SimplePlugin framework (http://romanvm.github.io/script.module.simpleplugin/index.html)
+
 ## v2.0.1
 * New setting 'albums_per_page'
 * New menu structure

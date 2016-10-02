@@ -1,17 +1,27 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <settings>
-    <category label="Server">
-    <setting id="subsonic_url" type="text" label="Server URL" default="http://demo.subsonic.org"/>
-    <setting id="username" type="text" label="Username" default="guest3"/>
-    <setting id="password" type="text" option="hidden" label="Password" default="guest"/>
-    <setting id="apiversion" type="labelenum" label="API version" values="1.11.0|1.12.0|1.13.0|1.14.0" default="1.13.0"/>
-    <setting id="insecure" type="bool" label="Allow self signed certificates" default="false" />
-    <setting id="legacyauth" type="bool" label="Use pre-1.13.0 API version authentication" default="false"/>
-    <setting type="sep" />
-    <setting id="albums_per_page" type="labelenum" label="Albums per page" default="50" values="10|25|50|100|250|500"/>
-    <setting id="tracks_per_page" type="labelenum" label="Tracks per page (ignored in albums & playlists)" default="100" values="10|25|50|100|250|500"/>
-    <setting type="sep" />
-    <setting id="transcode_format" type="labelenum" label="Transcode format" values="mp3|raw|flv|ogg"/>
-    <setting id="bitrate" type="labelenum" label="Bitrate" values="320|256|224|192|160|128|112|96|80|64|56|48|40|32"/>
+    <!-- GENERAL -->
+    <category label="General">
+        <setting label="Server" type="lsep" />
+        <setting id="subsonic_url" type="text" label="Server URL" default="http://demo.subsonic.org"/>
+        <setting id="username" type="text" label="Username" default="guest3"/>
+        <setting id="password" type="text" option="hidden" label="Password" default="guest"/>
+        <setting label="Display" type="lsep" />
+        <setting id="albums_per_page" type="labelenum" label="Albums per page" default="50" values="10|25|50|100|250|500"/>
+        <setting id="tracks_per_page" type="labelenum" label="Tracks per page (ignored in albums & playlists)" default="100" values="10|25|50|100|250|500"/>
+        <setting label="Streaming" type="lsep" />
+        <setting id="transcode_format_streaming" type="labelenum" label="Transcode format" values="mp3|raw|flv|ogg"/>
+        <setting id="bitrate_streaming" type="labelenum" label="Bitrate" values="320|256|224|192|160|128|112|96|80|64|56|48|40|32"/>
     </category>
+    
+    <!-- ADVANCED -->
+  	<category label="Advanced Settings">
+        <setting label="Server" type="lsep" />
+        <setting id="apiversion" type="labelenum" label="API version" values="1.11.0|1.12.0|1.13.0|1.14.0" default="1.13.0"/>
+        <setting id="insecure" type="bool" label="Allow self signed certificates" default="false" />
+        <setting label="Cache" type="lsep" />
+        <setting id="cache_minutes" type="labelenum" label="Cache datas time (in minutes)" default="30" values="1|15|30|60|120|180|720|1440"/>
+	    <setting label="Debug" type="lsep" />
+	    <setting label="Enable Debug mode" type="bool" id="debug" default="false" />
+	</category>
 </settings>
