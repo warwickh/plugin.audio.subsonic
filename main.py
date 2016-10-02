@@ -13,15 +13,12 @@ import json
 from datetime import datetime
 import dateutil.parser
 
-
-
-# Make sure library folder is on the path
-sys.path.append(xbmc.translatePath(
-    os.path.join(Addon().addon.getAddonInfo('path'), 'lib')))
-
 # Create plugin instance
 plugin = Plugin()
 
+# Make sure library folder is on the path
+sys.path.append(xbmc.translatePath(
+    os.path.join(plugin.addon.getAddonInfo('path'), 'lib')))
 
 # initialize_gettext
 #_ = plugin.initialize_gettext()
@@ -32,8 +29,8 @@ cache_minutes = int(Addon().get_setting('cache_minutes'))
 import libsonic_extra
 
 def popup(text, time=5000, image=None):
-    title = Addon().addon.getAddonInfo('name')
-    icon = Addon().addon.getAddonInfo('icon')
+    title = plugin.addon.getAddonInfo('name')
+    icon = plugin.addon.getAddonInfo('icon')
     xbmc.executebuiltin('Notification(%s, %s, %d, %s)' % (title, text,
                         time, icon))
 
