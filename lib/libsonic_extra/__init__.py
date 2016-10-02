@@ -63,7 +63,7 @@ class SubsonicClient(libsonic.Connection):
 
         # Invoke original constructor
         super(SubsonicClient, self).__init__(
-            host, username, password, port=port, apiVersion=apiversion, insecure=insecure, legacyAuth=legacyauth)
+            host, username, password, port=port, appName='Kodi', apiVersion=apiversion, insecure=insecure, legacyAuth=legacyauth)
 
     def getIndexes(self, *args, **kwargs):
         """
