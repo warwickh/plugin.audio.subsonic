@@ -1,7 +1,9 @@
 # Changelog
 
 ## v2.0.2
+* main code (main.py) fully rewritten
 * Use SimplePlugin framework (http://romanvm.github.io/script.module.simpleplugin/index.html)
+* Cache datas
 
 ## v2.0.1
 * New setting 'albums_per_page'
