@@ -68,6 +68,9 @@ def root(params):
     # get connection
     connection = get_connection()
     
+    if connection is False:
+        return
+    
     listing = []
 
     menus = {
@@ -126,6 +129,9 @@ def menu_albums(params):
     
     # get connection
     connection = get_connection()
+    
+    if connection is False:
+        return
     
     listing = []
 
@@ -189,6 +195,9 @@ def menu_tracks(params):
     # get connection
     connection = get_connection()
     
+    if connection is False:
+        return
+    
     listing = []
 
     menus = {
@@ -235,6 +244,9 @@ def list_artists(params):
     
     # get connection
     connection = get_connection()
+    
+    if connection is False:
+        return
 
     listing = []
 
@@ -284,6 +296,9 @@ def list_albums(params):
     
     # get connection
     connection = get_connection()
+    
+    if connection is False:
+        return
 
     query_args_json = params['query_args']
     query_args = json.loads(query_args_json)
@@ -353,6 +368,9 @@ def list_artist_albums(params):
     
     # get connection
     connection = get_connection()
+    
+    if connection is False:
+        return
 
     listing = []
 
@@ -415,6 +433,9 @@ def list_tracks(params):
     
     # get connection
     connection = get_connection()
+    
+    if connection is False:
+        return
 
     # Album
     if 'album_id' in params:
@@ -516,6 +537,9 @@ def play_track(params):
     
     # get connection
     connection = get_connection()
+    
+    if connection is False:
+        return
 
     url = connection.streamUrl(sid=id,
         maxBitRate=Addon().get_setting('bitrate_streaming'),
@@ -557,6 +581,9 @@ def list_playlists(params):
     
     # get connection
     connection = get_connection()
+    
+    if connection is False:
+        return
 
     listing = []
 
