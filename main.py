@@ -203,8 +203,9 @@ def menu_tracks(params):
 
     menus = {
         'tracks_starred': {
-            'name':     'Starred tracks',
-            'thumb':    None
+            'name':             'Starred tracks',
+            'thumb':            None,
+            'is_stars_list':    True
         }
     }
 
@@ -223,8 +224,9 @@ def menu_tracks(params):
             'thumb':    menu.get('thumb'), # Item thumbnail
             'fanart':   menu.get('thumb'), # Item thumbnail
             'url':      plugin.get_url(
-                action=     'list_tracks',
-                menu_id=    menu_id
+                action=         'list_tracks',
+                menu_id=        menu_id,
+                is_stars_list=  menu.get('is_stars_list')
             )
         })  # Item label
 
@@ -239,7 +241,7 @@ def menu_tracks(params):
     )
 
 @plugin.action()
-@plugin.cached(cache_minutes) #if cache is enabled, cache data for the following function
+#@plugin.cached(cache_minutes) #if cache is enabled, cache data for the following function
 def list_artists(params):
     
     # get connection
@@ -276,7 +278,7 @@ def list_artists(params):
         #context menu actions
         context_actions = []
         if can_star('artist',item.get('id')):
-            action_star =  context_action_star('artist',item.get('id'))
+            action_star =  context_action_star('artist',item.get('id'),params.get('is_stars_list'))
             context_actions.append(action_star)
         
         if len(context_actions) > 0:
@@ -304,7 +306,7 @@ def list_artists(params):
     )
 
 @plugin.action()
-@plugin.cached(cache_minutes) #if cache is enabled, cache data for the following function
+#@plugin.cached(cache_minutes) #if cache is enabled, cache data for the following function
 def list_albums(params):
     
     listing = []
@@ -336,7 +338,6 @@ def list_albums(params):
     #debug
     query_args_json = json.dumps(query_args)
     plugin.log('list_albums with args:' + query_args_json);
-    #popup(json.dumps(query_args_json))
 
     #Get items
     items = connection.walk_albums(**query_args)
@@ -378,7 +379,7 @@ def list_albums(params):
     )
 
 @plugin.action()
-@plugin.cached(cache_minutes) #if cache is enabled, cache data for the following function
+#@plugin.cached(cache_minutes) #if cache is enabled, cache data for the following function
 def list_artist_albums(params):
     
     # get connection
@@ -412,6 +413,7 @@ def list_artist_albums(params):
 def get_album_entry(item, params):
     
     menu_id = params.get('menu_id')
+    is_stars_list=  params.get('is_stars_list')
 
     # name
 
@@ -429,7 +431,8 @@ def get_album_entry(item, params):
             action=         'list_tracks',
             album_id=       item.get('id'),
             hide_artist=    item.get('hide_artist'),
-            menu_id=        menu_id
+            menu_id=        menu_id,
+            is_stars_list=  is_stars_list
         ),
         'info': {
             'music': { ##http://romanvm.github.io/Kodistubs/_autosummary/xbmcgui.html#xbmcgui.ListItem.setInfo
@@ -447,11 +450,11 @@ def get_album_entry(item, params):
     context_actions = []
 
     if can_star('album',item.get('id')):
-        action_star =  context_action_star('album',item.get('id'))
+        action_star =  context_action_star('album',item.get('id'),is_stars_list)
         context_actions.append(action_star)
 
     if can_download('album',item.get('id')):
-        action_download =  context_action_star('album',item.get('id'))
+        action_download =  context_action_download('album',item.get('id'))
         context_actions.append(action_download)
 
     if len(context_actions) > 0:
@@ -460,7 +463,7 @@ def get_album_entry(item, params):
     return entry
 
 @plugin.action()
-@plugin.cached(cache_minutes) #if cache is enabled, cache data for the following function
+#@plugin.cached(cache_minutes) #if cache is enabled, cache data for the following function
 def list_tracks(params):
     
     menu_id = params.get('menu_id')
@@ -534,6 +537,7 @@ def list_tracks(params):
 def get_track_entry(item,params):
     
     menu_id = params.get('menu_id')
+    is_stars_list = params.get('is_stars_list')
 
     # name
     if 'hide_artist' in params:
@@ -543,6 +547,17 @@ def get_track_entry(item,params):
             item.get('artist', '<Unknown>'),
             item.get('title', '<Unknown>')
         )
+        
+    #date_create
+    item_date = item.get('created')
+        
+    # star
+    if (is_stars_list):
+        item_date = item.get('starred')
+        #TO FIX
+        #starAscii = '★'
+        #star =starAscii.encode('utf-8')
+        #title = "%s %s" % (star,title)
 
     entry = {
         'label':    title,
@@ -563,7 +578,8 @@ def get_track_entry(item,params):
             'year':         item.get('year'),
             'genre':        item.get('genre'),
             'size':         item.get('size'),
-            'duration':     item.get('duration')
+            'duration':     item.get('duration'),
+            'date':         item_date
             }
         }
     }
@@ -572,11 +588,11 @@ def get_track_entry(item,params):
     context_actions = []
 
     if can_star('track',item.get('id')):
-        action_star =  context_action_star('track',item.get('id'))
+        action_star =  context_action_star('track',item.get('id'),is_stars_list)
         context_actions.append(action_star)
 
     if can_download('track',item.get('id')):
-        action_download =  context_action_star('track',item.get('id'))
+        action_download =  context_action_download('track',item.get('id'))
         context_actions.append(action_download)
 
     if len(context_actions) > 0:
@@ -633,7 +649,7 @@ def convert_date_from_iso8601(iso8601):
     return date_obj.strftime('%d.%m.%Y')
 
 @plugin.action()
-@plugin.cached(cache_minutes) #if cache is enabled, cache data for the following function
+#@plugin.cached(cache_minutes) #if cache is enabled, cache data for the following function
 def list_playlists(params):
     
     # get connection
@@ -682,27 +698,47 @@ def list_playlists(params):
 @plugin.action()
 def star_item(params):
 
-    #can be single or lists of IDs
-    sids=       params.get('sids'); #songs
-    albumIds=   params.get('albumIds');
-    artistIds=  params.get('artistIds');
+    ids=     params.get('ids'); #can be single or lists of IDs
     unstar=  params.get('unstar',False);
-    
+    unstar = (unstar) and (unstar != 'None') and (unstar != 'False') #TO FIX better statement ?
+    type=    params.get('type');
+    sids = albumIds = artistIds = None
+
+    #validate type
+    if type == 'track':
+        sids = ids
+    elif type == 'artist':
+        artistIds = ids
+    elif type == 'album':
+        albumIds = ids
+        
+    #validate capability
+    if not can_star(type,ids):
+        return;
+        
+    #validate IDs
+    if (not sids and not artistIds and not albumIds):
+        return;
+
     # get connection
     connection = get_connection()
     
     if connection is False:
         return
-    
+
     ###
     
     did_action = False
-    
+
     try:
         if unstar:
-            did_action = connection.unstar(sids, albumIds, artistIds)
+            request = connection.unstar(sids, albumIds, artistIds)
         else:
-            did_action = connection.star(sids, albumIds, artistIds)
+            request = connection.star(sids, albumIds, artistIds)
+
+        if request['status'] == 'ok':
+            did_action = True
+
     except:
         pass
 
@@ -712,90 +748,168 @@ def star_item(params):
         
         if unstar:
             message = 'Item has been unstarred.'
+            plugin.log('Unstarred %s #%s' % (type,json.dumps(ids)))
         else: #star
             message = 'Item has been starred!'
+            plugin.log('Starred %s #%s' % (type,json.dumps(ids)))
             
+       
         popup(message)
             
         #TO FIX clear starred lists caches ?
         #TO FIX refresh current list after star set ?
         
+    else:
+        if unstar:
+            plugin.log_error('Unable to unstar %s #%s' % (type,json.dumps(ids)))
+        else:
+            plugin.log_error('Unable to star %s #%s' % (type,json.dumps(ids)))
+
+    return did_action
+        
 
         
-def context_action_star(type,id):
+def context_action_star(type,id,is_stars_list):
     
-    if type is 'track':
-        return (
-            'Star track', 
-            'XBMC.RunPlugin(%s)' % plugin.get_url(action='star_item',type='track',sids=id)
-        )
-    elif type is 'artist':
-        return (
-            'Star artist', 
-            'XBMC.RunPlugin(%s)' % plugin.get_url(action='star_item',type='artist',artistIds=id)
-        )
-    elif type is 'album':
-        return (
-            'Star album', 
-            'XBMC.RunPlugin(%s)' % plugin.get_url(action='star_item',type='album',albumIds=id)
-        )
-    
-#should be available only in the starred lists;
-#so we don't have to fetch the starred status for each item
-#(since it is not available into the XML response from the server)
-def context_action_unstar(type,id):
-    if not can_star(type,id):
-        return ()
-    
-    if type is 'track':
-        return (
-            'Unstar track', 
-            'XBMC.RunPlugin(%s)' % plugin.get_url(action='star_item',type='track',sids=id,unstar=True)
-        )
-    elif type is 'artist':
-        return (
-            'Unstar artist', 
-            'XBMC.RunPlugin(%s)' % plugin.get_url(action='star_item',type='artist',artistIds=id,unstar=True)
-        )
-    elif type is 'album':
-        return (
-            'Unstar album', 
-            'XBMC.RunPlugin(%s)' % plugin.get_url(action='star_item',type='album',albumIds=id,unstar=True)
-        )
+    unstar = (is_stars_list) and (is_stars_list != 'None') and (is_stars_list != 'False') #TO FIX better statement ?
+
+    if not unstar:
+
+        if type == 'track':
+            label = 'Star track'
+        elif type == 'artist':
+            label = 'Star artist'
+        elif type == 'album':
+            label = 'Star album'
+            
+    else:
         
+        #Should be available only in the stars lists;
+        #so we don't have to fetch the starred status for each item
+        #(since it is not available into the XML response from the server)
+
+        if type == 'track':
+            label = 'Unstar track'
+        elif type == 'artist':
+            label = 'Unstar artist'
+        elif type == 'album':
+            label = 'Unstar album'
+    
+    return (
+        label, 
+        'XBMC.RunPlugin(%s)' % plugin.get_url(action='star_item',type=type,ids=id,unstar=unstar)
+    )
+
 #Subsonic API says this is supported for artist,tracks and albums,
 #But I can see it available only for tracks on Subsonic 5.3, so disable it.
-def can_star(type,id):
-    if type is 'track':
-        return True
-    elif type is 'artist':
+def can_star(type,ids = None):
+    
+    if not ids:
         return False
-    elif type is 'album':
+    
+    if not isinstance(ids, list) or isinstance(ids, tuple):
+        ids = [ids]
+        if len(ids) == 0:
+            return False
+    
+    if type == 'track':
+        return True
+    elif type == 'artist':
+        return False
+    elif type == 'album':
         return False
 
     
 def context_action_download(type,id):
-    if type is 'track':
-        return (
-            'Download track', 
-            'XBMC.RunPlugin(%s)' % plugin.get_url(action='star_item',type='track',sids=id)
-        )
-    elif type is 'album':
-        return (
-            'Download album', 
-            'XBMC.RunPlugin(%s)' % plugin.get_url(action='star_item',type='album',albumIds=id)
-        )
+    if type == 'track':
+        label = 'Download track'
+    elif type == 'album':
+        label = 'Download album'
 
-def can_download(type,id):
-    if type is 'track':
-        return True
-    elif type is 'album':
+    return (
+        label, 
+        'XBMC.RunPlugin(%s)' % plugin.get_url(action='download_item',type=type,id=id)
+    )
+
+def can_download(type,id = None):
+    if id is None:
         return False
+    
+    if type == 'track':
+        return True
+    elif type == 'album':
+        return True
     
 @plugin.action()
 def download_item(params):
-    #popup('Download item !')
-    popup('Not yet implemented!')
+
+    id=     params.get('id'); #can be single or lists of IDs
+    type=    params.get('type');
+    
+    #validate path
+    path = Addon().get_setting('subsonic_url')
+    
+    if path is None: #TO FIX better statement ? Check if it exists
+        popup('No directory set for your downloads, please review the addon settings')
+
+    #validate capability
+    if not can_download(type,id):
+        return;
+    
+    if type == 'track':
+        did_action = download_track(id)
+    elif type == 'album':
+        did_action = download_album(id)
+    
+    if did_action:
+        plugin.log('Downloaded %s #%s' % (type,id))
+        popup('Item has been downloaded!')
+        
+    else:
+        plugin.log_error('Unable to downloaded %s #%s' % (type,id))
+
+    return did_action
+    
+def download_track(id):
+    
+    popup('Downloading tracks is not yet implemented !')
+    return
+
+    # get connection
+    connection = get_connection()
+    
+    if connection is False:
+        return
+
+    ###
+    
+    did_action = False
+
+    try:
+        request = connection.download(id)
+        if request['status'] == 'ok':
+            did_action = True
+
+    except:
+        pass
+
+    return did_action
+
+def download_album(id):
+    
+    popup('Downloading albums is not yet implemented !')
+    return
+
+    # get connection
+    connection = get_connection()
+    
+    if connection is False:
+        return
+
+    ###
+    
+    did_action = False
+
 
 
 # Start plugin from within Kodi.
