@@ -6,14 +6,24 @@
 # Created on: 28.11.2014
 # License: GPL v.3 https://www.gnu.org/copyleft/gpl.html
 
-from simpleplugin import Plugin
-from simpleplugin import Addon
-import os
-import json
-from datetime import datetime
-import dateutil.parser
-import shutil
+
 import xbmcgui
+import json
+import os
+import shutil
+import dateutil.parser
+from datetime import datetime
+
+
+#check for Simpleplugin.  Official repos are not up to date so let's do this nasty trick.
+#TO FIX : version check. https://github.com/romanvm/script.module.simpleplugin/issues/4
+try:
+    from simpleplugin import Plugin
+    from simpleplugin import Addon
+except:
+    xbmcgui.Dialog().ok('SimplePlugin 2.0.1 required', "The Subsonic Addon requires SimplePlugin 2.0.1 framework.", "Please download and install it !", "https://github.com/romanvm/script.module.simpleplugin/releases") 
+    sys.exit()
+
 
 # Create plugin instance
 plugin = Plugin()
