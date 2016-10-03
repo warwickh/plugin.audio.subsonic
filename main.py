@@ -12,6 +12,7 @@ import os
 import json
 from datetime import datetime
 import dateutil.parser
+import shutil
 
 # Create plugin instance
 plugin = Plugin()
@@ -847,17 +848,17 @@ def download_item(params):
     type=    params.get('type');
     
     #validate path
-    path = Addon().get_setting('subsonic_url')
+    download_folder = Addon().get_setting('download_folder')
     
-    if path is None: #TO FIX better statement ? Check if it exists
-        popup('No directory set for your downloads, please review the addon settings')
+    if not download_folder:
+        popup("Please set a directory for your downloads")
 
     #validate capability
     if not can_download(type,id):
         return;
     
     if type == 'track':
-        did_action = download_track(id)
+        did_action = download_tracks(id)
     elif type == 'album':
         did_action = download_album(id)
     
@@ -870,30 +871,80 @@ def download_item(params):
 
     return did_action
     
-def download_track(id):
-    
-    popup('Downloading tracks is not yet implemented !')
-    return
+def download_tracks(ids):
 
+    #popup is fired before, in download_item
+    download_folder = Addon().get_setting('download_folder')
+    if not download_folder:
+        return
+    
+    if not ids:
+        return False
+    
+    #make list
+    if not isinstance(ids, list) or isinstance(ids, tuple):
+        ids = [ids]
+        
+    
+    ids_count = len(ids)
+    
+    #check if empty
+    if ids_count == 0:
+        return False
+    
     # get connection
     connection = get_connection()
     
     if connection is False:
         return
-
-    ###
     
-    did_action = False
+    ids_downloaded_count = 0
+    for id in ids:
+    
+        # debug
+        plugin.log('Trying to download track #'+str(id))
 
-    try:
-        request = connection.download(id)
-        if request['status'] == 'ok':
-            did_action = True
+        # get song infos
+        response = connection.getSong(id);
+        song = response.get('song')
+        plugin.log_error('Track info :')
+        plugin.log_error(song)
 
-    except:
-        pass
+        song_path_relative = song.get("path", None) # 'Radiohead/Kid A/Idioteque.mp3'
+        song_path = os.path.join(download_folder, song_path_relative) # 'C:/users/.../Radiohead/Kid A/Idioteque.mp3'
+        song_directory = os.path.dirname(os.path.abspath(song_path))  # 'C:/users/.../Radiohead/Kid A'
 
-    return did_action
+        #check if file exists
+        if os.path.isfile(song_path):
+            plugin.log("File '%s' already exists" % (id))
+            continue
+            
+        try:
+            #get remote file (file-object like)
+            file_obj = connection.download(68679)
+
+            #create directory if it does not exists
+            if not os.path.exists(song_directory):
+                os.makedirs(song_directory)
+
+            #create blank file
+            file = open(song_path, 'a') #create a new file but don't erase the existing one if it exists
+
+            #fill blank file
+            shutil.copyfileobj(file_obj, file)
+            file.close()
+
+            ids_downloaded_count+=1
+            popup("Track #%s' has been downloaded" % (id))
+            
+        except:
+            popup("Error while downloading track #%s" % (id))
+            plugin.log("Error while downloading track #%s" % (id))
+            pass
+
+    if ids_count == ids_downloaded_count:
+        return True
+    
 
 def download_album(id):
     
