@@ -110,7 +110,7 @@ def root(params):
             'fanart':   thumb, # Item thumbnail
             'url':      plugin.get_url(
                             action=menus[mid]['callback'],
-                            mid=mid
+                            menu_id=mid
                         )
         })  # Item label
 
@@ -136,22 +136,22 @@ def menu_albums(params):
     listing = []
 
     menus = {
-        'newest': {
+        'albums_newest': {
             'name':     'Newest albums',
             'thumb':    None,
             'args':     {"ltype": "newest"}
         },
-        'frequent': {
+        'albums_frequent': {
             'name':     'Most played albums',
             'thumb': None,
             'args':     {"ltype": "frequent"}
         },
-        'recent': {
+        'albums_recent': {
             'name':     'Recently played albums',
             'thumb': None,
             'args':     {"ltype": "recent"}
         },
-        'random': {
+        'albums_random': {
             'name':     'Random albums',
             'thumb': None,
             'args':     {"ltype": "random"}
@@ -160,9 +160,9 @@ def menu_albums(params):
 
     # Iterate through categories
 
-    for mid in menus:
+    for menu_id in menus:
         
-        menu = menus.get(mid)
+        menu = menus.get(menu_id)
         
         # image
         if 'thumb' in menu:
@@ -175,7 +175,8 @@ def menu_albums(params):
             'url':      plugin.get_url(
                             action=         'list_albums',
                             page=           1,
-                            query_args=     json.dumps(menu.get('args'))
+                            query_args=     json.dumps(menu.get('args')),
+                            menu_id=        menu_id
                         )
         })  # Item label
 
@@ -201,18 +202,17 @@ def menu_tracks(params):
     listing = []
 
     menus = {
-        'starred': {
+        'tracks_starred': {
             'name':     'Starred tracks',
-            'thumb':    None,
-            'starred':  True
+            'thumb':    None
         }
     }
 
     # Iterate through categories
 
-    for mid in menus:
+    for menu_id in menus:
         
-        menu = menus.get(mid)
+        menu = menus.get(menu_id)
         
         # image
         if 'thumb' in menu:
@@ -223,9 +223,9 @@ def menu_tracks(params):
             'thumb':    menu.get('thumb'), # Item thumbnail
             'fanart':   menu.get('thumb'), # Item thumbnail
             'url':      plugin.get_url(
-                            action=         'list_tracks',
-                            starred=        menu.get('starred')
-                        )
+                action=     'list_tracks',
+                menu_id=    menu_id
+            )
         })  # Item label
 
     return plugin.create_listing(
@@ -256,12 +256,14 @@ def list_artists(params):
     # Iterate through items
 
     for item in items:
-        listing.append({
+        entry = {
             'label':    item['name'],
             'thumb':    connection.getCoverArtUrl(item.get('id')),
             'fanart':   connection.getCoverArtUrl(item.get('id')),
-            'url':      plugin.get_url(action='list_artist_albums',
-                                  artist_id=item.get('id')
+            'url':      plugin.get_url(
+                            action=     'list_artist_albums',
+                            artist_id=  item.get('id'),
+                            menu_id=    params.get('menu_id')
                         ),
             'info': {
                 'music': { ##http://romanvm.github.io/Kodistubs/_autosummary/xbmcgui.html#xbmcgui.ListItem.setInfo
@@ -269,7 +271,20 @@ def list_artists(params):
                     'artist':   item.get('name')
                 }
             }
-        })
+        }
+
+        #context menu actions
+        context_actions = []
+        if can_star('artist',item.get('id')):
+            action_star =  context_action_star('artist',item.get('id'))
+            context_actions.append(action_star)
+        
+        if len(context_actions) > 0:
+            entry['context_menu'] = context_actions
+        
+        listing.append(entry)
+        
+        
         
     # Sort methods - List of integer constants representing virtual folder sort methods. - see SortFileItem.h from Kodi core
     sortable_by = ( 
@@ -395,6 +410,8 @@ def list_artist_albums(params):
     )
 
 def get_album_entry(item, params):
+    
+    menu_id = params.get('menu_id')
 
     # name
 
@@ -404,14 +421,15 @@ def get_album_entry(item, params):
         title = '%s - %s' % (item.get('artist', '<Unknown>'),
                              item.get('name', '<Unknown>'))
 
-    return {
+    entry = {
         'label': title,
         'thumb': item.get('coverArt'),
         'fanart': item.get('coverArt'),
         'url': plugin.get_url(
             action=         'list_tracks',
             album_id=       item.get('id'),
-            hide_artist=    item.get('hide_artist')
+            hide_artist=    item.get('hide_artist'),
+            menu_id=        menu_id
         ),
         'info': {
             'music': { ##http://romanvm.github.io/Kodistubs/_autosummary/xbmcgui.html#xbmcgui.ListItem.setInfo
@@ -422,12 +440,30 @@ def get_album_entry(item, params):
                 'album':    item.get('name'),
                 'year':     item.get('year')
             }
-        },
+        }
     }
+    
+    #context menu actions
+    context_actions = []
+
+    if can_star('album',item.get('id')):
+        action_star =  context_action_star('album',item.get('id'))
+        context_actions.append(action_star)
+
+    if can_download('album',item.get('id')):
+        action_download =  context_action_star('album',item.get('id'))
+        context_actions.append(action_download)
+
+    if len(context_actions) > 0:
+        entry['context_menu'] = context_actions
+
+    return entry
 
 @plugin.action()
 @plugin.cached(cache_minutes) #if cache is enabled, cache data for the following function
 def list_tracks(params):
+    
+    menu_id = params.get('menu_id')
 
     listing = []
     
@@ -452,9 +488,8 @@ def list_tracks(params):
         #    items[item]['tracknumber'] = tracknumber
         
     # Starred
-    if 'starred' in params:
+    if menu_id == 'tracks_starred':
         items = connection.walk_tracks_starred()
-
         
     # Iterate through items
     key = 0;
@@ -497,6 +532,8 @@ def list_tracks(params):
 
 
 def get_track_entry(item,params):
+    
+    menu_id = params.get('menu_id')
 
     # name
     if 'hide_artist' in params:
@@ -507,13 +544,14 @@ def get_track_entry(item,params):
             item.get('title', '<Unknown>')
         )
 
-    return {
+    entry = {
         'label':    title,
         'thumb':    item.get('coverArt'),
         'fanart':   item.get('coverArt'),
         'url':      plugin.get_url(
-                        action='play_track',
-                        id=item.get('id')
+                        action=     'play_track',
+                        id=         item.get('id'),
+                        menu_id=    menu_id
                     ),
         'is_playable':  True,
         'mime':         item.get("contentType"),
@@ -526,8 +564,27 @@ def get_track_entry(item,params):
             'genre':        item.get('genre'),
             'size':         item.get('size'),
             'duration':     item.get('duration')
-            }},
+            }
         }
+    }
+    
+    #context menu actions
+    context_actions = []
+
+    if can_star('track',item.get('id')):
+        action_star =  context_action_star('track',item.get('id'))
+        context_actions.append(action_star)
+
+    if can_download('track',item.get('id')):
+        action_download =  context_action_star('track',item.get('id'))
+        context_actions.append(action_download)
+
+    if len(context_actions) > 0:
+        entry['context_menu'] = context_actions
+    
+
+    return entry
+
 
 @plugin.action()
 def play_track(params):
@@ -598,8 +655,10 @@ def list_playlists(params):
             'label':    item['name'],
             'thumb':    connection.getCoverArtUrl(item.get('id')),
             'fanart':   connection.getCoverArtUrl(item.get('id')),
-            'url':      plugin.get_url(action='list_tracks',
-                            playlist_id=item.get('id'),
+            'url':      plugin.get_url(
+                            action=         'list_tracks',
+                            playlist_id=    item.get('id'),
+                            menu_id=        params.get('menu_id')
                            
                         ),
             'info': {'music': { ##http://romanvm.github.io/Kodistubs/_autosummary/xbmcgui.html#xbmcgui.ListItem.setInfo
@@ -618,6 +677,125 @@ def list_playlists(params):
         #view_mode = None, #a numeric code for a skin view mode. View mode codes are different in different skins except for 50 (basic listing).
         #content = None #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
     )
+
+#star (or unstar) an item
+@plugin.action()
+def star_item(params):
+
+    #can be single or lists of IDs
+    sids=       params.get('sids'); #songs
+    albumIds=   params.get('albumIds');
+    artistIds=  params.get('artistIds');
+    unstar=  params.get('unstar',False);
+    
+    # get connection
+    connection = get_connection()
+    
+    if connection is False:
+        return
+    
+    ###
+    
+    did_action = False
+    
+    try:
+        if unstar:
+            did_action = connection.unstar(sids, albumIds, artistIds)
+        else:
+            did_action = connection.star(sids, albumIds, artistIds)
+    except:
+        pass
+
+    ###
+    
+    if did_action:
+        
+        if unstar:
+            message = 'Item has been unstarred.'
+        else: #star
+            message = 'Item has been starred!'
+            
+        popup(message)
+            
+        #TO FIX clear starred lists caches ?
+        #TO FIX refresh current list after star set ?
+        
+
+        
+def context_action_star(type,id):
+    
+    if type is 'track':
+        return (
+            'Star track', 
+            'XBMC.RunPlugin(%s)' % plugin.get_url(action='star_item',type='track',sids=id)
+        )
+    elif type is 'artist':
+        return (
+            'Star artist', 
+            'XBMC.RunPlugin(%s)' % plugin.get_url(action='star_item',type='artist',artistIds=id)
+        )
+    elif type is 'album':
+        return (
+            'Star album', 
+            'XBMC.RunPlugin(%s)' % plugin.get_url(action='star_item',type='album',albumIds=id)
+        )
+    
+#should be available only in the starred lists;
+#so we don't have to fetch the starred status for each item
+#(since it is not available into the XML response from the server)
+def context_action_unstar(type,id):
+    if not can_star(type,id):
+        return ()
+    
+    if type is 'track':
+        return (
+            'Unstar track', 
+            'XBMC.RunPlugin(%s)' % plugin.get_url(action='star_item',type='track',sids=id,unstar=True)
+        )
+    elif type is 'artist':
+        return (
+            'Unstar artist', 
+            'XBMC.RunPlugin(%s)' % plugin.get_url(action='star_item',type='artist',artistIds=id,unstar=True)
+        )
+    elif type is 'album':
+        return (
+            'Unstar album', 
+            'XBMC.RunPlugin(%s)' % plugin.get_url(action='star_item',type='album',albumIds=id,unstar=True)
+        )
+        
+#Subsonic API says this is supported for artist,tracks and albums,
+#But I can see it available only for tracks on Subsonic 5.3, so disable it.
+def can_star(type,id):
+    if type is 'track':
+        return True
+    elif type is 'artist':
+        return False
+    elif type is 'album':
+        return False
+
+    
+def context_action_download(type,id):
+    if type is 'track':
+        return (
+            'Download track', 
+            'XBMC.RunPlugin(%s)' % plugin.get_url(action='star_item',type='track',sids=id)
+        )
+    elif type is 'album':
+        return (
+            'Download album', 
+            'XBMC.RunPlugin(%s)' % plugin.get_url(action='star_item',type='album',albumIds=id)
+        )
+
+def can_download(type,id):
+    if type is 'track':
+        return True
+    elif type is 'album':
+        return False
+    
+@plugin.action()
+def download_item(params):
+    #popup('Download item !')
+    popup('Not yet implemented!')
 
 
 # Start plugin from within Kodi.
