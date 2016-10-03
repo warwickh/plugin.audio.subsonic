@@ -852,6 +852,7 @@ def download_item(params):
     
     if not download_folder:
         popup("Please set a directory for your downloads")
+        plugin.log_error("No directory set for downloads")
 
     #validate capability
     if not can_download(type,id):
@@ -907,8 +908,8 @@ def download_tracks(ids):
         # get song infos
         response = connection.getSong(id);
         song = response.get('song')
-        plugin.log_error('Track info :')
-        plugin.log_error(song)
+        plugin.log('Track info :')
+        plugin.log(song)
 
         song_path_relative = song.get("path", None) # 'Radiohead/Kid A/Idioteque.mp3'
         song_path = os.path.join(download_folder, song_path_relative) # 'C:/users/.../Radiohead/Kid A/Idioteque.mp3'
