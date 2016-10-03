@@ -13,6 +13,7 @@ import json
 from datetime import datetime
 import dateutil.parser
 import shutil
+import xbmcgui
 
 # Create plugin instance
 plugin = Plugin()
@@ -893,64 +894,81 @@ def download_tracks(ids):
     if ids_count == 0:
         return False
     
+    plugin.log('download_tracks IDs:')
+    plugin.log(json.dumps(ids))
+
     # get connection
     connection = get_connection()
     
     if connection is False:
         return
-    
-    ids_downloaded_count = 0
+
+    #progress...
+    pc_step = 100/ids_count
+    pc_progress = 0
+    ids_parsed = 0
+    progressdialog = xbmcgui.DialogProgress()
+    progressdialog.create("Downloading tracks...") #Title
+
     for id in ids:
-    
+
+        if (progressdialog.iscanceled()):
+            return False
+
         # debug
         plugin.log('Trying to download track #'+str(id))
 
-        # get song infos
+        # get track infos
         response = connection.getSong(id);
-        song = response.get('song')
+        track = response.get('song')
         plugin.log('Track info :')
-        plugin.log(song)
+        plugin.log(track)
+        
+        # progress bar
+        pc_progress = ids_parsed * pc_step
+        progressdialog.update(pc_progress, 'Getting track informations...',"%s - %s" % (track.get('artist','<Unknown>'),track.get('title','<Unknown>')))
 
-        song_path_relative = song.get("path", None) # 'Radiohead/Kid A/Idioteque.mp3'
-        song_path = os.path.join(download_folder, song_path_relative) # 'C:/users/.../Radiohead/Kid A/Idioteque.mp3'
-        song_directory = os.path.dirname(os.path.abspath(song_path))  # 'C:/users/.../Radiohead/Kid A'
+        track_path_relative = track.get("path", None) # 'Radiohead/Kid A/Idioteque.mp3'
+        track_path = os.path.join(download_folder, track_path_relative) # 'C:/users/.../Radiohead/Kid A/Idioteque.mp3'
+        track_directory = os.path.dirname(os.path.abspath(track_path))  # 'C:/users/.../Radiohead/Kid A'
 
         #check if file exists
-        if os.path.isfile(song_path):
+        if os.path.isfile(track_path):
+            
+            progressdialog.update(pc_progress, 'Track has already been downloaded!')
             plugin.log("File '%s' already exists" % (id))
-            continue
             
-        try:
-            #get remote file (file-object like)
-            file_obj = connection.download(68679)
-
-            #create directory if it does not exists
-            if not os.path.exists(song_directory):
-                os.makedirs(song_directory)
-
-            #create blank file
-            file = open(song_path, 'a') #create a new file but don't erase the existing one if it exists
-
-            #fill blank file
-            shutil.copyfileobj(file_obj, file)
-            file.close()
-
-            ids_downloaded_count+=1
-            popup("Track #%s' has been downloaded" % (id))
+        else:
             
-        except:
-            popup("Error while downloading track #%s" % (id))
-            plugin.log("Error while downloading track #%s" % (id))
-            pass
+            progressdialog.update(pc_progress, "Downloading track...",track_path)
 
-    if ids_count == ids_downloaded_count:
-        return True
-    
+            try:
+                #get remote file (file-object like)
+                file_obj = connection.download(id)
+
+                #create directory if it does not exists
+                if not os.path.exists(track_directory):
+                    os.makedirs(track_directory)
+
+                #create blank file
+                file = open(track_path, 'a') #create a new file but don't erase the existing one if it exists
+
+                #fill blank file
+                shutil.copyfileobj(file_obj, file)
+                file.close()
+
+            except:
+                popup("Error while downloading track #%s" % (id))
+                plugin.log("Error while downloading track #%s" % (id))
+                pass
+        
+        ids_parsed += 1
+        
+    progressdialog.update(100, "Done !","Enjoy !")
+    xbmc.sleep(1000)
+    progressdialog.close()
 
 def download_album(id):
-    
-    popup('Downloading albums is not yet implemented !')
-    return
 
     # get connection
     connection = get_connection()
@@ -958,9 +976,21 @@ def download_album(id):
     if connection is False:
         return
 
-    ###
+    # get album infos
+    response = connection.getAlbum(id);
+    album = response.get('album')
+    tracks = album.get('song')
     
-    did_action = False
+    plugin.log('getAlbum:')
+    plugin.log(json.dumps(album))
+
+    ids = [] #list of track IDs
+    
+    for i, track in enumerate(tracks):
+        track_id = track.get('id')
+        ids.append(track_id)
+
+    download_tracks(ids)
 
 
 
