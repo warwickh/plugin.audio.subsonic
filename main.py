@@ -1045,7 +1045,7 @@ def download_tracks(ids):
         pc_progress = ids_parsed * pc_step
         progressdialog.update(pc_progress, 'Getting track informations...',get_entry_track_label(track))
 
-        track_path_relative = track.get("path", None) # 'Radiohead/Kid A/Idioteque.mp3'
+        track_path_relative = track.get("path", None).encode('utf8', 'replace') # 'Radiohead/Kid A/Idioteque.mp3'
         track_path = os.path.join(download_folder, track_path_relative) # 'C:/users/.../Radiohead/Kid A/Idioteque.mp3'
         track_directory = os.path.dirname(os.path.abspath(track_path))  # 'C:/users/.../Radiohead/Kid A'
 
