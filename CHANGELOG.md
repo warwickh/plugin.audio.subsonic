@@ -6,6 +6,7 @@ Released 5 October 2016
 * Colorize starred items
 * Hide artist in lists if it is unique
 * Removed list_artist_albums()
+* Include simpleplugin v2.0.1 as library and remove KODI dependency
 
 ## v2.0.3
 Released 4 October 2016
