@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.0.4
+Released 5 October 2016
+* Cache (permanently) starred items so we can know everywhere if an item is starred or not without querying it
+* Colorize starred items
+* Hide artist in lists if it is unique
+* Removed list_artist_albums()
+
 ## v2.0.3
 Released 4 October 2016
 * Random tracks submenu
