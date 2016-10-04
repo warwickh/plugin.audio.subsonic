@@ -6,7 +6,7 @@ Contributions are welcome:
 https://github.com/gordielachance/plugin.audio.subsonic
 
 ## Features
-* Browse by artist, album, tracks, and playlists
+* Browse by artist, albums (newest/most played/recently played/random), tracks (starred/random), and playlists
 * Download songs
 * Star songs
 

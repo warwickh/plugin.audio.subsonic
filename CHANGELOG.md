@@ -2,6 +2,9 @@
 
 ## v2.0.3
 Released 4 October 2016
+* Random tracks submenu
+* Download tracks
+* Star tracks
 * Context menu for downloading or marking items as favorite
 
 ## v2.0.2

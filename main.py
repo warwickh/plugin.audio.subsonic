@@ -218,6 +218,10 @@ def menu_tracks(params):
             'name':             'Starred tracks',
             'thumb':            None,
             'is_stars_list':    True
+        },
+        'tracks_random': {
+            'name':             'Random tracks',
+            'thumb':            None
         }
     }
 
@@ -329,23 +333,22 @@ def list_albums(params):
     if connection is False:
         return
 
-    query_args_json = params['query_args']
-    query_args = json.loads(query_args_json)
+    #query
+    query_args = {}
+    try:
+        query_args_json = params['query_args']
+        query_args = json.loads(query_args_json)
+    except:
+        pass
 
     #size
     albums_per_page = int(Addon().get_setting('albums_per_page'))
     query_args["size"] = albums_per_page
     
     #offset
-    offset = int(params.get('page')) - 1;
+    offset = int(params.get('page',1)) - 1;
     if offset > 0:
         query_args["offset"] = offset * albums_per_page
-     
-    #TO FIX this test is for pagination
-    #query_args["fromYear"] = 2016
-    #query_args["toYear"] = 2016
-    #query_args["ltype"] = 'byYear'
-        
 
     #debug
     query_args_json = json.dumps(query_args)
@@ -482,6 +485,27 @@ def list_tracks(params):
 
     listing = []
     
+    #query
+    query_args = {}
+    try:
+        query_args_json = params['query_args']
+        query_args = json.loads(query_args_json)
+    except:
+        pass
+
+    #size
+    tracks_per_page = int(Addon().get_setting('tracks_per_page'))
+    query_args["size"] = tracks_per_page
+
+    #offset
+    offset = int(params.get('page',1)) - 1;
+    if offset > 0:
+        query_args["offset"] = offset * tracks_per_page
+        
+    #debug
+    query_args_json = json.dumps(query_args)
+    plugin.log('list_tracks with args:' + query_args_json);
+    
     # get connection
     connection = get_connection()
     
@@ -493,7 +517,7 @@ def list_tracks(params):
         items = connection.walk_album(params['album_id'])
         
     # Playlist
-    if 'playlist_id' in params:
+    elif 'playlist_id' in params:
         items = connection.walk_playlist(params['playlist_id'])
         
         #TO FIX
@@ -503,9 +527,18 @@ def list_tracks(params):
         #    items[item]['tracknumber'] = tracknumber
         
     # Starred
-    if menu_id == 'tracks_starred':
+    elif menu_id == 'tracks_starred':
         items = connection.walk_tracks_starred()
+    
+    # Random
+    elif menu_id == 'tracks_random':
+        items = connection.walk_tracks_random(**query_args)
+    
+    # Filters
+    #else:
+        #TO WORK
         
+
     # Iterate through items
     key = 0;
     for item in items:
@@ -514,8 +547,8 @@ def list_tracks(params):
         key +=1
         
     # Root menu
-    link_root = navigate_root()
-    listing.append(link_root)
+    #link_root = navigate_root()
+    #listing.append(link_root)
         
     # Pagination if we've not reached the end of the lsit
     # if type(items) != type(True): TO FIX
