@@ -207,8 +207,7 @@ def menu_tracks(params):
     menus = {
         'tracks_starred': {
             'name':             'Starred tracks',
-            'thumb':            None,
-            'is_stars_list':    True
+            'thumb':            None
         },
         'tracks_random': {
             'name':             'Random tracks',
@@ -232,8 +231,7 @@ def menu_tracks(params):
             'fanart':   menu.get('thumb'), # Item thumbnail
             'url':      plugin.get_url(
                 action=         'list_tracks',
-                menu_id=        menu_id,
-                is_stars_list=  menu.get('is_stars_list')
+                menu_id=        menu_id
             )
         })  # Item label
 
@@ -285,7 +283,7 @@ def list_artists(params):
         #context menu actions
         context_actions = []
         if can_star('artist',item.get('id')):
-            action_star =  context_action_star('artist',item.get('id'),params.get('is_stars_list'))
+            action_star =  context_action_star('artist',item.get('id'))
             context_actions.append(action_star)
         
         if len(context_actions) > 0:
@@ -419,7 +417,6 @@ def list_artist_albums(params):
 def get_album_entry(item, params):
     
     menu_id = params.get('menu_id')
-    is_stars_list=  params.get('is_stars_list')
 
     # name
 
@@ -437,8 +434,7 @@ def get_album_entry(item, params):
             action=         'list_tracks',
             album_id=       item.get('id'),
             hide_artist=    item.get('hide_artist'),
-            menu_id=        menu_id,
-            is_stars_list=  is_stars_list
+            menu_id=        menu_id
         ),
         'info': {
             'music': { ##http://romanvm.github.io/Kodistubs/_autosummary/xbmcgui.html#xbmcgui.ListItem.setInfo
@@ -456,7 +452,7 @@ def get_album_entry(item, params):
     context_actions = []
 
     if can_star('album',item.get('id')):
-        action_star =  context_action_star('album',item.get('id'),is_stars_list)
+        action_star =  context_action_star('album',item.get('id'))
         context_actions.append(action_star)
 
     if can_download('album',item.get('id')):
@@ -505,11 +501,11 @@ def list_tracks(params):
 
     # Album
     if 'album_id' in params:
-        items = connection.walk_album(params['album_id'])
+        generator = connection.walk_album(params['album_id'])
         
     # Playlist
     elif 'playlist_id' in params:
-        items = connection.walk_playlist(params['playlist_id'])
+        generator = connection.walk_playlist(params['playlist_id'])
         
         #TO FIX
         #tracknumber = 0
@@ -519,16 +515,24 @@ def list_tracks(params):
         
     # Starred
     elif menu_id == 'tracks_starred':
-        items = connection.walk_tracks_starred()
+        generator = connection.walk_tracks_starred()
+        
     
     # Random
     elif menu_id == 'tracks_random':
-        items = connection.walk_tracks_random(**query_args)
+        generator = connection.walk_tracks_random(**query_args)
     
     # Filters
     #else:
         #TO WORK
         
+    #make a list out of the generator so we can iterate it several times
+    items = list(generator)
+    
+    #update stars
+    if menu_id == 'tracks_starred':
+        ids_list = [item.get('id') for item in items]
+        stars_cache_update(ids_list)
 
     # Iterate through items
     key = 0;
@@ -569,11 +573,59 @@ def list_tracks(params):
         content = 'songs' #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
     )
 
+#stars (persistent) cache is used to know what context action (star/unstar) we should display.
+#run this function every time we get starred items.
+#ids can be a single ID or a list
+#using a set makes sure that IDs will be unique.
+def stars_cache_update(ids,remove=False):
+
+    #get existing cache set
+    starred = stars_cache_get()
+    
+    #make sure this is a list
+    if not isinstance(ids, list):
+        ids = [ids]
+    
+    #abord if empty
+    if len(ids) == 0:
+        return
+    
+    #parse items
+    for item_id in ids:
+        item_id = int(item_id)
+        if not remove:
+            starred.add(item_id)
+        else:
+            starred.remove(item_id)
+    
+    #store them
+    with plugin.get_storage() as storage:
+        storage['starred_ids'] = starred
+        
+    plugin.log('stars_cache_update:')
+    plugin.log(starred)
+
+
+def stars_cache_get():
+    with plugin.get_storage() as storage:
+        starred = storage.get('starred_ids',set())
+
+    plugin.log('stars_cache_get:')
+    plugin.log(starred)
+    return starred
+
+def is_starred(id):
+    starred = stars_cache_get()
+    id = int(id)
+    if id in starred:
+        return True
+    else:
+        return False
+
 
 def get_track_entry(item,params):
     
     menu_id = params.get('menu_id')
-    is_stars_list = params.get('is_stars_list')
 
     # name
     if 'hide_artist' in params:
@@ -588,7 +640,7 @@ def get_track_entry(item,params):
     item_date = item.get('created')
         
     # star
-    if (is_stars_list):
+    if is_starred(item.get('id')):
         item_date = item.get('starred')
         #TO FIX
         #starAscii = '★'
@@ -624,7 +676,7 @@ def get_track_entry(item,params):
     context_actions = []
 
     if can_star('track',item.get('id')):
-        action_star =  context_action_star('track',item.get('id'),is_stars_list)
+        action_star =  context_action_star('track',item.get('id'))
         context_actions.append(action_star)
 
     if can_download('track',item.get('id')):
@@ -789,6 +841,7 @@ def star_item(params):
             message = 'Item has been starred!'
             plugin.log('Starred %s #%s' % (type,json.dumps(ids)))
             
+        stars_cache_update(ids,unstar)
        
         popup(message)
             
@@ -805,11 +858,11 @@ def star_item(params):
         
 
         
-def context_action_star(type,id,is_stars_list):
+def context_action_star(type,id):
     
-    unstar = (is_stars_list) and (is_stars_list != 'None') and (is_stars_list != 'False') #TO FIX better statement ?
+    starred = is_starred(id)
 
-    if not unstar:
+    if not starred:
 
         if type == 'track':
             label = 'Star track'
@@ -833,7 +886,7 @@ def context_action_star(type,id,is_stars_list):
     
     return (
         label, 
-        'XBMC.RunPlugin(%s)' % plugin.get_url(action='star_item',type=type,ids=id,unstar=unstar)
+        'XBMC.RunPlugin(%s)' % plugin.get_url(action='star_item',type=type,ids=id,unstar=starred)
     )
 
 #Subsonic API says this is supported for artist,tracks and albums,
