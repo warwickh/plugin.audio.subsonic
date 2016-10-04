@@ -36,7 +36,7 @@ sys.path.append(xbmc.translatePath(
 #_ = plugin.initialize_gettext()
 
 connection = None
-cache_minutes = int(Addon().get_setting('cache_minutes'))
+cachetime = int(Addon().get_setting('cachetime'))
 
 import libsonic_extra
 
@@ -253,7 +253,7 @@ def menu_tracks(params):
     )
 
 @plugin.action()
-#@plugin.cached(cache_minutes) #if cache is enabled, cache data for the following function
+#@plugin.cached(cachetime) #if cache is enabled, cache data for the following function
 def list_artists(params):
     
     # get connection
@@ -318,7 +318,7 @@ def list_artists(params):
     )
 
 @plugin.action()
-#@plugin.cached(cache_minutes) #if cache is enabled, cache data for the following function
+#@plugin.cached(cachetime) #if cache is enabled, cache data for the following function
 def list_albums(params):
     
     listing = []
@@ -391,7 +391,7 @@ def list_albums(params):
     )
 
 @plugin.action()
-#@plugin.cached(cache_minutes) #if cache is enabled, cache data for the following function
+#@plugin.cached(cachetime) #if cache is enabled, cache data for the following function
 def list_artist_albums(params):
     
     # get connection
@@ -475,7 +475,7 @@ def get_album_entry(item, params):
     return entry
 
 @plugin.action()
-#@plugin.cached(cache_minutes) #if cache is enabled, cache data for the following function
+#@plugin.cached(cachetime) #if cache is enabled, cache data for the following function
 def list_tracks(params):
     
     menu_id = params.get('menu_id')
@@ -661,7 +661,7 @@ def convert_date_from_iso8601(iso8601):
     return date_obj.strftime('%d.%m.%Y')
 
 @plugin.action()
-#@plugin.cached(cache_minutes) #if cache is enabled, cache data for the following function
+#@plugin.cached(cachetime) #if cache is enabled, cache data for the following function
 def list_playlists(params):
     
     # get connection

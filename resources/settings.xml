@@ -9,10 +9,11 @@
         <setting label="Display" type="lsep" />
         <setting id="albums_per_page" type="labelenum" label="Albums per page" default="50" values="10|25|50|100|250|500"/>
         <setting id="tracks_per_page" type="labelenum" label="Tracks per page (ignored in albums & playlists)" default="100" values="10|25|50|100|250|500"/>
+        <setting label="Download" type="lsep" />
+        <setting id="download_folder"  type="folder" label="Download folder" source="auto" option="writeable"/>
         <setting label="Streaming" type="lsep" />
         <setting id="transcode_format_streaming" type="labelenum" label="Transcode format" values="mp3|raw|flv|ogg"/>
         <setting id="bitrate_streaming" type="labelenum" label="Bitrate" values="320|256|224|192|160|128|112|96|80|64|56|48|40|32"/>
-        <setting id="download_folder"  type="folder" label="Download folder" source="auto" option="writeable"/>
     </category>
     
     <!-- ADVANCED -->
@@ -20,9 +21,7 @@
         <setting label="Server" type="lsep" />
         <setting id="apiversion" type="labelenum" label="API version" values="1.11.0|1.12.0|1.13.0|1.14.0" default="1.13.0"/>
         <setting id="insecure" type="bool" label="Allow self signed certificates" default="false" />
-        <setting label="Cache" type="lsep" />
-        <setting id="cache_minutes" type="labelenum" label="Cache datas time (in minutes)" default="30" values="1|15|30|60|120|180|720|1440"/>
-	    <setting label="Debug" type="lsep" />
-	    <setting label="Enable Debug mode" type="bool" id="debug" default="false" />
+        <setting label="Cache (in minutes) - not yet implemented" type="lsep" />
+        <setting id="cachetime" type="labelenum" label="Cache datas time" default="5" values="1|5|15|30|60|120|180|720|1440"/>
 	</category>
 </settings>
