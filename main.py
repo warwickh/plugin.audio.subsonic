@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 # Module: main
-# Author: Roman V. M.
-# Created on: 28.11.2014
+# Author: G.Breant
+# Created on: 04.10.2016
 # License: GPL v.3 https://www.gnu.org/copyleft/gpl.html
 
 

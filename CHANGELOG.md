@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.0.3
+Released 4 October 2016
+* Context menu for downloading or marking items as favorite
+
 ## v2.0.2
 * main code (main.py) fully rewritten
 * Use SimplePlugin framework (http://romanvm.github.io/script.module.simpleplugin/index.html)
