@@ -3,7 +3,6 @@
 <requires>
     <import addon="xbmc.python" version="2.14.0"/>
     <import addon="script.module.dateutil" version="2.4.2"/>
-    <import addon="script.module.simpleplugin" version="2.0.1"/>
 </requires>
 <extension point="xbmc.python.pluginsource" library="main.py">
   <provides>audio</provides>

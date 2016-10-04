@@ -13,7 +13,6 @@ https://github.com/gordielachance/plugin.audio.subsonic
 ## Installation
 * Navigate to your `.kodi/addons/` folder
 * Clone this repository: `git clone https://github.com/gordielachance/plugin.audio.subsonic.git`
-* Install the SimplePlugin dependency by cloning its repository: `git clone https://github.com/romanvm/script.module.simpleplugin.git`
 * (Re)start Kodi.
 
 ## TODO

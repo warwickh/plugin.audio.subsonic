@@ -6,39 +6,30 @@
 # Created on: 04.10.2016
 # License: GPL v.3 https://www.gnu.org/copyleft/gpl.html
 
-
+import os
+import xbmcaddon
 import xbmcgui
 import json
-import os
 import shutil
 import dateutil.parser
 from datetime import datetime
 
+# Add the /lib folder to sys
+sys.path.append(xbmc.translatePath(os.path.join(xbmcaddon.Addon("plugin.audio.subsonic").getAddonInfo("path"), "lib")))
 
-#check for Simpleplugin.  Official repos are not up to date so let's do this nasty trick.
-#TO FIX : version check. https://github.com/romanvm/script.module.simpleplugin/issues/4
-try:
-    from simpleplugin import Plugin
-    from simpleplugin import Addon
-except:
-    xbmcgui.Dialog().ok('SimplePlugin 2.0.1 required', "The Subsonic Addon requires SimplePlugin 2.0.1 framework.", "Please download and install it !", "https://github.com/romanvm/script.module.simpleplugin/releases") 
-    sys.exit()
-
+import libsonic
+import libsonic_extra
+from simpleplugin import Plugin
+from simpleplugin import Addon
 
 # Create plugin instance
 plugin = Plugin()
-
-# Make sure library folder is on the path
-sys.path.append(xbmc.translatePath(
-    os.path.join(plugin.addon.getAddonInfo('path'), 'lib')))
 
 # initialize_gettext
 #_ = plugin.initialize_gettext()
 
 connection = None
 cachetime = int(Addon().get_setting('cachetime'))
-
-import libsonic_extra
 
 def popup(text, time=5000, image=None):
     title = plugin.addon.getAddonInfo('name')
