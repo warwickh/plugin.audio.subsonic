@@ -18,8 +18,8 @@ from datetime import datetime
 # Add the /lib folder to sys
 sys.path.append(xbmc.translatePath(os.path.join(xbmcaddon.Addon("plugin.audio.subsonic").getAddonInfo("path"), "lib")))
 
-import libsonic
-import libsonic_extra
+import libsonic_extra #TO FIX - we should get rid of this and use only libsonic
+
 from simpleplugin import Plugin
 from simpleplugin import Addon
 
