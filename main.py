@@ -622,33 +622,37 @@ def is_starred(id):
     else:
         return False
 
+def get_track_entry_label(item,hide_artist = False):
+    if hide_artist:
+        label = item.get('title', '<Unknown>')
+    else:
+        label = '%s - %s' % (
+            item.get('artist', '<Unknown>'),
+            item.get('title', '<Unknown>')
+        )
+        
+    #TO FIX
+    #if is_starred(item.get('id')):
+        #starAscii = '★'
+        #star =starAscii.encode('utf-8')
+        #title = "%s %s" % (star,title)
+        
+    return label
+    
 
 def get_track_entry(item,params):
     
     menu_id = params.get('menu_id')
 
-    # name
-    if 'hide_artist' in params:
-        title = item.get('title', '<Unknown>')
-    else:
-        title = '%s - %s' % (
-            item.get('artist', '<Unknown>'),
-            item.get('title', '<Unknown>')
-        )
-        
     #date_create
     item_date = item.get('created')
         
     # star
     if is_starred(item.get('id')):
         item_date = item.get('starred')
-        #TO FIX
-        #starAscii = '★'
-        #star =starAscii.encode('utf-8')
-        #title = "%s %s" % (star,title)
 
     entry = {
-        'label':    title,
+        'label':    get_track_entry_label(item,params.get('hide_artist')),
         'thumb':    item.get('coverArt'),
         'fanart':   item.get('coverArt'),
         'url':      plugin.get_url(
@@ -1013,7 +1017,7 @@ def download_tracks(ids):
         
         # progress bar
         pc_progress = ids_parsed * pc_step
-        progressdialog.update(pc_progress, 'Getting track informations...',"%s - %s" % (track.get('artist','<Unknown>'),track.get('title','<Unknown>')))
+        progressdialog.update(pc_progress, 'Getting track informations...',get_track_entry_label(track))
 
         track_path_relative = track.get("path", None) # 'Radiohead/Kid A/Idioteque.mp3'
         track_path = os.path.join(download_folder, track_path_relative) # 'C:/users/.../Radiohead/Kid A/Idioteque.mp3'
