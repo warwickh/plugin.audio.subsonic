@@ -339,7 +339,15 @@ def list_albums(params):
     plugin.log('list_albums with args:' + query_args_json);
 
     #Get items
-    items = connection.walk_albums(**query_args)
+    generator = connection.walk_albums(**query_args)
+    
+    #make a list out of the generator so we can iterate it several times
+    items = list(generator)
+    
+    #check if there is only one artist for this album (and then hide it)
+    artists = [item.get('artist',None) for item in items]
+    if len(artists) <= 1:
+        params['hide_artist']   = True
 
     # Iterate through items
     for item in items:
@@ -578,6 +586,11 @@ def list_tracks(params):
         
     #make a list out of the generator so we can iterate it several times
     items = list(generator)
+
+    #check if there is only one artist for this album (and then hide it)
+    artists = [item.get('artist',None) for item in items]
+    if len(artists) <= 1:
+        params['hide_artist']   = True
     
     #update stars
     if menu_id == 'tracks_starred':
