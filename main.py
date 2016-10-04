@@ -422,6 +422,12 @@ def get_entry_album(item, params):
 #https://github.com/xbmc/xbmc/blob/master/xbmc/SortFileItem.h
 #TO FIX _DATE or _DATEADDED ?
 def get_sort_methods(type,params):
+    
+    #TO FIX
+    #actually it seems possible to 'restore' the default sorting (by labels)
+    #so our starred items don't get colorized.
+    #so do not sort stuff
+    return []
 
     sortable = [
         xbmcplugin.SORT_METHOD_NONE,
