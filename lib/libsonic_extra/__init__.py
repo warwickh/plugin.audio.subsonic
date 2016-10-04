@@ -411,13 +411,13 @@ class SubsonicClient(libsonic.Connection):
         for song in response["album"]["song"]:
             yield song
 
-    def walk_tracks_random(self, size, genre=None, from_year=None,to_year=None):
+    def walk_tracks_random(self, size=None, genre=None, fromYear=None,toYear=None):
         """
         Request random songs by genre and/or year and iterate over each song.
         """
 
         response = self.getRandomSongs(
-            size=size, genre=genre, fromYear=from_year, toYear=to_year)
+            size=size, genre=genre, fromYear=fromYear, toYear=toYear)
 
         for song in response["randomSongs"]["song"]:
             yield song
