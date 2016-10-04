@@ -289,11 +289,11 @@ def list_artists(params):
 
 def get_entry_artist(item,params):
     return {
-        'label':    item.get('name'),
+        'label':    get_starred_label(item.get('id'),item.get('name')),
         'thumb':    connection.getCoverArtUrl(item.get('id')),
         'fanart':   connection.getCoverArtUrl(item.get('id')),
         'url':      plugin.get_url(
-                        action=     'list_artist_albums',
+                        action=     'list_albums',
                         artist_id=  item.get('id'),
                         menu_id=    params.get('menu_id')
                     ),
@@ -339,7 +339,10 @@ def list_albums(params):
     plugin.log('list_albums with args:' + query_args_json);
 
     #Get items
-    generator = connection.walk_albums(**query_args)
+    if 'artist_id' in params:
+        generator = connection.walk_artist(params.get('artist_id'))
+    else:
+        generator = connection.walk_albums(**query_args)
     
     #make a list out of the generator so we can iterate it several times
     items = list(generator)
@@ -354,14 +357,16 @@ def list_albums(params):
         album = get_entry_album(item, params)
         listing.append(album)
         
-    # Root menu
+     # Root menu
     link_root = navigate_root()
     listing.append(link_root)
-        
-    # Pagination if we've not reached the end of the lsit
-    # if type(items) != type(True): TO FIX
-    link_next = navigate_next(params)
-    listing.append(link_next)
+
+
+    if not 'artist_id' in params:
+        # Pagination if we've not reached the end of the lsit
+        # if type(items) != type(True): TO FIX
+        link_next = navigate_next(params)
+        listing.append(link_next)
 
     return plugin.create_listing(
         listing,
@@ -369,38 +374,6 @@ def list_albums(params):
         #update_listing = False, #if True, Kodi won’t open a sub-listing but refresh the current one. 
         cache_to_disk = True, #cache this view to disk.
         sort_methods = get_sort_methods('albums',params), 
-        #view_mode = None, #a numeric code for a skin view mode. View mode codes are different in different skins except for 50 (basic listing).
-        content = 'albums' #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
-    )
-
-@plugin.action()
-#@plugin.cached(cachetime) #if cache is enabled, cache data for the following function
-def list_artist_albums(params):
-    
-    # get connection
-    connection = get_connection()
-    
-    if connection is False:
-        return
-
-    listing = []
-
-    # Get items
-    artist_id =             params['artist_id']
-    params['hide_artist']   = True
-    items = connection.walk_artist(artist_id)
-
-    # Iterate through items
-    for item in items:
-        album = get_entry_album(item, params)
-        listing.append(album)
-
-    return plugin.create_listing(
-        listing,
-        #succeeded = True, #if False Kodi won’t open a new listing and stays on the current level.
-        #update_listing = False, #if True, Kodi won’t open a sub-listing but refresh the current one. 
-        cache_to_disk = True, #cache this view to disk.
-        sort_methods = get_sort_methods('albums',params), #he list of integer constants representing virtual folder sort methods.
         #view_mode = None, #a numeric code for a skin view mode. View mode codes are different in different skins except for 50 (basic listing).
         content = 'albums' #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
     )
@@ -444,14 +417,6 @@ def get_entry_album(item, params):
         entry['context_menu'] = context_actions
 
     return entry
-
-def get_entry_album_label(item,hide_artist = False):
-    if hide_artist:
-        label = item.get('name', '<Unknown>')
-    else:
-        label = '%s - %s' % (item.get('artist', '<Unknown>'),
-                             item.get('name', '<Unknown>'))
-    return label
 
 #sort method for list types
 #https://github.com/xbmc/xbmc/blob/master/xbmc/SortFileItem.h
@@ -720,6 +685,11 @@ def get_entry_track(item,params):
 
     return entry
 
+def get_starred_label(id,label):
+    if is_starred(id):
+        label = '[COLOR=FF00FF00]%s[/COLOR]' % label
+    return label
+
 def get_entry_track_label(item,hide_artist = False):
     if hide_artist:
         label = item.get('title', '<Unknown>')
@@ -728,17 +698,16 @@ def get_entry_track_label(item,hide_artist = False):
             item.get('artist', '<Unknown>'),
             item.get('title', '<Unknown>')
         )
-        
-    if is_starred(item.get('id')):
-        label = '[COLOR=FF00FF00]%s[/COLOR]' % label
-        
-    #TO FIX
-    #if is_starred(item.get('id')):
-        #starAscii = '★'
-        #star =starAscii.encode('utf-8')
-        #title = "%s %s" % (star,title)
-        
-    return label
+
+    return get_starred_label(item.get('id'),label)
+
+def get_entry_album_label(item,hide_artist = False):
+    if hide_artist:
+        label = item.get('name', '<Unknown>')
+    else:
+        label = '%s - %s' % (item.get('artist', '<Unknown>'),
+                             item.get('name', '<Unknown>'))
+    return get_starred_label(item.get('id'),label)
 
 
 @plugin.action()
@@ -762,7 +731,7 @@ def play_track(params):
 
 def navigate_next(params):
   
-    page =      int(params['page'])
+    page =      int(params.get('page',1))
     page +=     1
     
     title = "Next page (%d)" % (page)
@@ -770,9 +739,9 @@ def navigate_next(params):
     return {
         'label':    title,
         'url':      plugin.get_url(
-                        action=         params['action'],
+                        action=         params.get('action',None),
                         page=           page,
-                        query_args=      params['query_args']
+                        query_args=     params.get('query_args',None)
                     )
     }
 
