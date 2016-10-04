@@ -8,6 +8,7 @@
 
 import os
 import xbmcaddon
+import xbmcplugin
 import xbmcgui
 import json
 import shutil
@@ -263,22 +264,7 @@ def list_artists(params):
     # Iterate through items
 
     for item in items:
-        entry = {
-            'label':    item['name'],
-            'thumb':    connection.getCoverArtUrl(item.get('id')),
-            'fanart':   connection.getCoverArtUrl(item.get('id')),
-            'url':      plugin.get_url(
-                            action=     'list_artist_albums',
-                            artist_id=  item.get('id'),
-                            menu_id=    params.get('menu_id')
-                        ),
-            'info': {
-                'music': { ##http://romanvm.github.io/Kodistubs/_autosummary/xbmcgui.html#xbmcgui.ListItem.setInfo
-                    'count':    item.get('albumCount'),
-                    'artist':   item.get('name')
-                }
-            }
-        }
+        entry = get_entry_artist(item,params)
 
         #context menu actions
         context_actions = []
@@ -290,25 +276,34 @@ def list_artists(params):
             entry['context_menu'] = context_actions
         
         listing.append(entry)
-        
-        
-        
-    # Sort methods - List of integer constants representing virtual folder sort methods. - see SortFileItem.h from Kodi core
-    sortable_by = ( 
-        0,  #SORT_METHOD_NONE
-        11,  #SORT_METHOD_ARTIST
-        40 #SORT_METHOD_UNSORTED
-    )
-        
+ 
     return plugin.create_listing(
         listing,
         #succeeded = True, #if False Kodi won’t open a new listing and stays on the current level.
         #update_listing = False, #if True, Kodi won’t open a sub-listing but refresh the current one. 
         cache_to_disk = True, #cache this view to disk.
-        sort_methods = sortable_by, #he list of integer constants representing virtual folder sort methods.
+        sort_methods = get_sort_methods('artists',params), #he list of integer constants representing virtual folder sort methods.
         #view_mode = None, #a numeric code for a skin view mode. View mode codes are different in different skins except for 50 (basic listing).
         content = 'artists' #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
     )
+
+def get_entry_artist(item,params):
+    return {
+        'label':    item.get('name'),
+        'thumb':    connection.getCoverArtUrl(item.get('id')),
+        'fanart':   connection.getCoverArtUrl(item.get('id')),
+        'url':      plugin.get_url(
+                        action=     'list_artist_albums',
+                        artist_id=  item.get('id'),
+                        menu_id=    params.get('menu_id')
+                    ),
+        'info': {
+            'music': { ##http://romanvm.github.io/Kodistubs/_autosummary/xbmcgui.html#xbmcgui.ListItem.setInfo
+                'count':    item.get('albumCount'),
+                'artist':   item.get('name')
+            }
+        }
+    }
 
 @plugin.action()
 #@plugin.cached(cachetime) #if cache is enabled, cache data for the following function
@@ -348,7 +343,7 @@ def list_albums(params):
 
     # Iterate through items
     for item in items:
-        album = get_album_entry(item, params)
+        album = get_entry_album(item, params)
         listing.append(album)
         
     # Root menu
@@ -359,25 +354,13 @@ def list_albums(params):
     # if type(items) != type(True): TO FIX
     link_next = navigate_next(params)
     listing.append(link_next)
-    
-    # Sort methods - List of integer constants representing virtual folder sort methods. - see SortFileItem.h from Kodi core
-    sortable_by = (
-            0,  #SORT_METHOD_NONE
-            1,  #SORT_METHOD_LABEL
-            #3,  #SORT_METHOD_DATE
-            11, #SORT_METHOD_ARTIST
-            #14, #SORT_METHOD_ALBUM
-            18, #SORT_METHOD_YEAR
-            #21 #SORT_METHOD_DATEADDED
-            40 #SORT_METHOD_UNSORTED
-    )
 
     return plugin.create_listing(
         listing,
         #succeeded = True, #if False Kodi won’t open a new listing and stays on the current level.
         #update_listing = False, #if True, Kodi won’t open a sub-listing but refresh the current one. 
         cache_to_disk = True, #cache this view to disk.
-        sort_methods = sortable_by, 
+        sort_methods = get_sort_methods('albums',params), 
         #view_mode = None, #a numeric code for a skin view mode. View mode codes are different in different skins except for 50 (basic listing).
         content = 'albums' #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
     )
@@ -401,7 +384,7 @@ def list_artist_albums(params):
 
     # Iterate through items
     for item in items:
-        album = get_album_entry(item, params)
+        album = get_entry_album(item, params)
         listing.append(album)
 
     return plugin.create_listing(
@@ -409,32 +392,22 @@ def list_artist_albums(params):
         #succeeded = True, #if False Kodi won’t open a new listing and stays on the current level.
         #update_listing = False, #if True, Kodi won’t open a sub-listing but refresh the current one. 
         cache_to_disk = True, #cache this view to disk.
-        #sort_methods = None, #he list of integer constants representing virtual folder sort methods.
+        sort_methods = get_sort_methods('albums',params), #he list of integer constants representing virtual folder sort methods.
         #view_mode = None, #a numeric code for a skin view mode. View mode codes are different in different skins except for 50 (basic listing).
         content = 'albums' #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
     )
 
-def get_album_entry(item, params):
-    
-    menu_id = params.get('menu_id')
-
-    # name
-
-    if 'hide_artist' in params:
-        title = item.get('name', '<Unknown>')
-    else:
-        title = '%s - %s' % (item.get('artist', '<Unknown>'),
-                             item.get('name', '<Unknown>'))
+def get_entry_album(item, params):
 
     entry = {
-        'label': title,
+        'label': get_entry_album_label(item,params.get('hide_artist',False)),
         'thumb': item.get('coverArt'),
         'fanart': item.get('coverArt'),
         'url': plugin.get_url(
             action=         'list_tracks',
             album_id=       item.get('id'),
             hide_artist=    item.get('hide_artist'),
-            menu_id=        menu_id
+            menu_id=        params.get('menu_id')
         ),
         'info': {
             'music': { ##http://romanvm.github.io/Kodistubs/_autosummary/xbmcgui.html#xbmcgui.ListItem.setInfo
@@ -464,13 +437,90 @@ def get_album_entry(item, params):
 
     return entry
 
+def get_entry_album_label(item,hide_artist = False):
+    if hide_artist:
+        label = item.get('name', '<Unknown>')
+    else:
+        label = '%s - %s' % (item.get('artist', '<Unknown>'),
+                             item.get('name', '<Unknown>'))
+    return label
+
+#sort method for list types
+#https://github.com/xbmc/xbmc/blob/master/xbmc/SortFileItem.h
+#TO FIX _DATE or _DATEADDED ?
+def get_sort_methods(type,params):
+
+    sortable = [
+        xbmcplugin.SORT_METHOD_NONE,
+        xbmcplugin.SORT_METHOD_LABEL,
+        xbmcplugin.SORT_METHOD_UNSORTED
+    ]
+    
+    if type is 'artists':
+        
+        artists = [
+            xbmcplugin.SORT_METHOD_ARTIST
+        ]
+
+        sortable = sortable + artists
+        
+    elif type is 'albums':
+        
+        albums = [
+            xbmcplugin.SORT_METHOD_ALBUM,
+            xbmcplugin.SORT_METHOD_DURATION,
+            xbmcplugin.SORT_METHOD_DATE,
+            #xbmcplugin.SORT_METHOD_YEAR
+        ]
+        
+        if not params.get('hide_artist',False):
+            albums.append(xbmcplugin.SORT_METHOD_ARTIST)
+
+        sortable = sortable + albums
+        
+    elif type is 'tracks':
+
+        tracks = [
+            xbmcplugin.SORT_METHOD_TITLE,
+            xbmcplugin.SORT_METHOD_ALBUM,
+            xbmcplugin.SORT_METHOD_TRACKNUM,
+            #xbmcplugin.SORT_METHOD_YEAR,
+            xbmcplugin.SORT_METHOD_GENRE,
+            xbmcplugin.SORT_METHOD_SIZE,
+            xbmcplugin.SORT_METHOD_DURATION,
+            xbmcplugin.SORT_METHOD_DATE,
+            xbmcplugin.SORT_METHOD_BITRATE
+        ]
+        
+        if not params.get('hide_artist',False):
+            tracks.append(xbmcplugin.SORT_METHOD_ARTIST)
+        
+        if params.get('playlist_id',False):
+            xbmcplugin.SORT_METHOD_PLAYLIST_ORDER,
+        
+        
+        sortable = sortable + tracks
+        
+    elif type is 'playlists':
+
+        playlists = [
+            xbmcplugin.SORT_METHOD_TITLE,
+            xbmcplugin.SORT_METHOD_DURATION,
+            xbmcplugin.SORT_METHOD_DATE
+        ]
+        
+        sortable = sortable + playlists
+
+    return sortable
+    
+
 @plugin.action()
 #@plugin.cached(cachetime) #if cache is enabled, cache data for the following function
 def list_tracks(params):
     
     menu_id = params.get('menu_id')
-
     listing = []
+    
     
     #query
     query_args = {}
@@ -537,7 +587,7 @@ def list_tracks(params):
     # Iterate through items
     key = 0;
     for item in items:
-        track = get_track_entry(item,params)
+        track = get_entry_track(item,params)
         listing.append(track)
         key +=1
         
@@ -549,26 +599,15 @@ def list_tracks(params):
     # if type(items) != type(True): TO FIX
     #link_next = navigate_next(params)
     #listing.append(link_next)
-    
-    # Sort methods - List of integer constants representing virtual folder sort methods. - see SortFileItem.h from Kodi core
-    sortable_by = ( 
-            0,  #SORT_METHOD_NONE
-            1,  #SORT_METHOD_LABEL
-            #3, #SORT_METHOD_DATE
-            7,  #SORT_METHOD_TRACKNUM
-            11, #SORT_METHOD_ARTIST
-            #14,#SORT_METHOD_ALBUM
-            18, #SORT_METHOD_YEAR
-            #21 #SORT_METHOD_DATEADDED
-            40  #SORT_METHOD_UNSORTED
-    )
+
+
 
     return plugin.create_listing(
         listing,
         #succeeded = True, #if False Kodi won’t open a new listing and stays on the current level.
         #update_listing = False, #if True, Kodi won’t open a sub-listing but refresh the current one. 
         #cache_to_disk = True, #cache this view to disk.
-        sort_methods = sortable_by, #he list of integer constants representing virtual folder sort methods.
+        sort_methods=get_sort_methods('tracks',params),
         #view_mode = None, #a numeric code for a skin view mode. View mode codes are different in different skins except for 50 (basic listing).
         content = 'songs' #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
     )
@@ -622,37 +661,12 @@ def is_starred(id):
     else:
         return False
 
-def get_track_entry_label(item,hide_artist = False):
-    if hide_artist:
-        label = item.get('title', '<Unknown>')
-    else:
-        label = '%s - %s' % (
-            item.get('artist', '<Unknown>'),
-            item.get('title', '<Unknown>')
-        )
-        
-    #TO FIX
-    #if is_starred(item.get('id')):
-        #starAscii = '★'
-        #star =starAscii.encode('utf-8')
-        #title = "%s %s" % (star,title)
-        
-    return label
-    
-
-def get_track_entry(item,params):
+def get_entry_track(item,params):
     
     menu_id = params.get('menu_id')
 
-    #date_create
-    item_date = item.get('created')
-        
-    # star
-    if is_starred(item.get('id')):
-        item_date = item.get('starred')
-
     entry = {
-        'label':    get_track_entry_label(item,params.get('hide_artist')),
+        'label':    get_entry_track_label(item,params.get('hide_artist')),
         'thumb':    item.get('coverArt'),
         'fanart':   item.get('coverArt'),
         'url':      plugin.get_url(
@@ -671,7 +685,7 @@ def get_track_entry(item,params):
             'genre':        item.get('genre'),
             'size':         item.get('size'),
             'duration':     item.get('duration'),
-            'date':         item_date
+            'date':         item.get('created')
             }
         }
     }
@@ -692,6 +706,26 @@ def get_track_entry(item,params):
     
 
     return entry
+
+def get_entry_track_label(item,hide_artist = False):
+    if hide_artist:
+        label = item.get('title', '<Unknown>')
+    else:
+        label = '%s - %s' % (
+            item.get('artist', '<Unknown>'),
+            item.get('title', '<Unknown>')
+        )
+        
+    if is_starred(item.get('id')):
+        label = '[COLOR=FF00FF00]%s[/COLOR]' % label
+        
+    #TO FIX
+    #if is_starred(item.get('id')):
+        #starAscii = '★'
+        #star =starAscii.encode('utf-8')
+        #title = "%s %s" % (star,title)
+        
+    return label
 
 
 @plugin.action()
@@ -758,33 +792,37 @@ def list_playlists(params):
     # Iterate through items
 
     for item in items:
-
-        listing.append({
-            'label':    item['name'],
-            'thumb':    connection.getCoverArtUrl(item.get('id')),
-            'fanart':   connection.getCoverArtUrl(item.get('id')),
-            'url':      plugin.get_url(
-                            action=         'list_tracks',
-                            playlist_id=    item.get('id'),
-                            menu_id=        params.get('menu_id')
-                           
-                        ),
-            'info': {'music': { ##http://romanvm.github.io/Kodistubs/_autosummary/xbmcgui.html#xbmcgui.ListItem.setInfo
-                'title':        item.get('name'),
-                'count':        item.get('songCount'),
-                'duration':     item.get('duration'),
-                'date':         convert_date_from_iso8601(item.get('created'))
-            }}
-        })
+        entry = get_entry_playlist(item,params)
+        listing.append(entry)
+        
     return plugin.create_listing(
         listing,
         #succeeded = True, #if False Kodi won’t open a new listing and stays on the current level.
         #update_listing = False, #if True, Kodi won’t open a sub-listing but refresh the current one. 
         #cache_to_disk = True, #cache this view to disk.
-        #sort_methods = None, #he list of integer constants representing virtual folder sort methods.
+        sort_methods = get_sort_methods('playlists',params), #he list of integer constants representing virtual folder sort methods.
         #view_mode = None, #a numeric code for a skin view mode. View mode codes are different in different skins except for 50 (basic listing).
         #content = None #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
     )
+
+def get_entry_playlist(item,params):
+    return {
+        'label':    item['name'],
+        'thumb':    connection.getCoverArtUrl(item.get('id')),
+        'fanart':   connection.getCoverArtUrl(item.get('id')),
+        'url':      plugin.get_url(
+                        action=         'list_tracks',
+                        playlist_id=    item.get('id'),
+                        menu_id=        params.get('menu_id')
+
+                    ),
+        'info': {'music': { ##http://romanvm.github.io/Kodistubs/_autosummary/xbmcgui.html#xbmcgui.ListItem.setInfo
+            'title':        item.get('name'),
+            'count':        item.get('songCount'),
+            'duration':     item.get('duration'),
+            'date':         convert_date_from_iso8601(item.get('created'))
+        }}
+    }
 
 #star (or unstar) an item
 @plugin.action()
@@ -1017,7 +1055,7 @@ def download_tracks(ids):
         
         # progress bar
         pc_progress = ids_parsed * pc_step
-        progressdialog.update(pc_progress, 'Getting track informations...',get_track_entry_label(track))
+        progressdialog.update(pc_progress, 'Getting track informations...',get_entry_track_label(track))
 
         track_path_relative = track.get("path", None) # 'Radiohead/Kid A/Idioteque.mp3'
         track_path = os.path.join(download_folder, track_path_relative) # 'C:/users/.../Radiohead/Kid A/Idioteque.mp3'
@@ -1089,7 +1127,6 @@ def download_album(id):
 if __name__ == "__main__":
     # Map actions
     # Note that we map callable objects without brackets ()
-    plugin.actions['list_playlists'] = list_playlists
     plugin.run()
 
 
