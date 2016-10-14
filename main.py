@@ -288,10 +288,11 @@ def list_artists(params):
     )
 
 def get_entry_artist(item,params):
+    image = connection.getCoverArtUrl(item.get('coverArt'))
     return {
         'label':    get_starred_label(item.get('id'),item.get('name')),
-        'thumb':    connection.getCoverArtUrl(item.get('id')),
-        'fanart':   connection.getCoverArtUrl(item.get('id')),
+        'thumb':    image,
+        'fanart':   image,
         'url':      plugin.get_url(
                         action=     'list_albums',
                         artist_id=  item.get('id'),
@@ -379,11 +380,13 @@ def list_albums(params):
     )
 
 def get_entry_album(item, params):
+    
+    image = connection.getCoverArtUrl(item.get('coverArt'))
 
     entry = {
-        'label': get_entry_album_label(item,params.get('hide_artist',False)),
-        'thumb': item.get('coverArt'),
-        'fanart': item.get('coverArt'),
+        'label':    get_entry_album_label(item,params.get('hide_artist',False)),
+        'thumb':    image,
+        'fanart':   image,
         'url': plugin.get_url(
             action=         'list_tracks',
             album_id=       item.get('id'),
@@ -648,11 +651,12 @@ def is_starred(id):
 def get_entry_track(item,params):
     
     menu_id = params.get('menu_id')
+    image = connection.getCoverArtUrl(item.get('coverArt'))
 
     entry = {
         'label':    get_entry_track_label(item,params.get('hide_artist')),
-        'thumb':    item.get('coverArt'),
-        'fanart':   item.get('coverArt'),
+        'thumb':    image,
+        'fanart':   image,
         'url':      plugin.get_url(
                         action=     'play_track',
                         id=         item.get('id'),
@@ -794,10 +798,11 @@ def list_playlists(params):
     )
 
 def get_entry_playlist(item,params):
+    image = connection.getCoverArtUrl(item.get('coverArt'))
     return {
         'label':    item['name'],
-        'thumb':    connection.getCoverArtUrl(item.get('id')),
-        'fanart':   connection.getCoverArtUrl(item.get('id')),
+        'thumb':    image,
+        'fanart':   image,
         'url':      plugin.get_url(
                         action=         'list_tracks',
                         playlist_id=    item.get('id'),
