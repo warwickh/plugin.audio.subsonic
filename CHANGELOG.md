@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.0.5
+Released 15 October 2016
+* Fixed images when listing entries
+
 ## v2.0.4
 Released 5 October 2016
 * Cache (permanently) starred items so we can know everywhere if an item is starred or not without querying it
