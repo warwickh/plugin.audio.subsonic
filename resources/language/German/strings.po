@@ -98,15 +98,15 @@ msgstr "Playlisten"
 
 msgctxt "#30023"
 msgid "Newest albums"
-msgstr "neueste Alben"
+msgstr "Neueste Alben"
 
 msgctxt "#30024"
 msgid "Most played albums"
-msgstr "häufig gehörte Alben"
+msgstr "Häufig gehörte Alben"
 
 msgctxt "#30025"
 msgid "Recently played albums"
-msgstr "zuletzt gehörte Alben"
+msgstr "Zuletzt gehörte Alben"
 
 msgctxt "#30026"
 msgid "Random albums"
@@ -130,23 +130,23 @@ msgstr "Bewertung hinzugefügt"
 
 msgctxt "#30033"
 msgid "Star track"
-msgstr "Bewerte Lied"
+msgstr "Lied bewerten"
 
 msgctxt "#30034"
 msgid "Star artist"
-msgstr "Bewerte Künstler"
+msgstr "Künstler bewerten"
 
 msgctxt "#30035"
 msgid "Star album"
-msgstr "Bewerte Album"
+msgstr "Album bewerten"
 
 msgctxt "#30036"
 msgid "unstar track"
-msgstr "Lied Bewertung löschen"
+msgstr "Liedbewertung löschen"
 
 msgctxt "#30037"
 msgid "unstar artist"
-msgstr "Künstler Bewertung löschen"
+msgstr "Künstlerbewertung löschen"
 
 msgctxt "#30038"
 msgid "unstar album"
@@ -154,8 +154,8 @@ msgstr "Album Bewertung löschen"
 
 msgctxt "#30039"
 msgid "Download track"
-msgstr "Download Lied"
+msgstr "Lied herunterladen"
 
 msgctxt "#30040"
 msgid "Download album"
-msgstr "Download Album"
+msgstr "Album herunterladen"
