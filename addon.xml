@@ -9,6 +9,7 @@
 </extension>
     <extension point="xbmc.addon.metadata">
         <summary lang="en">Subsonic music addon for Kodi.</summary>
+		<summary lang="de">Subsonic Musik Addon für Kodi.</summary>
         <description lang="en">
             Stream, star and download your tunes, directly to Kodi !
             For feature requests / issues:
@@ -16,8 +17,15 @@
             Contributions are welcome:
             https://github.com/gordielachance/plugin.audio.subsonic
         </description>
+		<description lang="de">
+            Stream, star and download your tunes, directly to Kodi !
+            For feature requests / issues:
+            https://github.com/gordielachance/plugin.audio.subsonic/issues
+            Contributions are welcome:
+            https://github.com/gordielachance/plugin.audio.subsonic
+        </description>
         <disclaimer lang="en"></disclaimer>
-        <language>en</language>
+        <language>multi</language>
         <platform>all</platform>
         <license>MIT</license>
         <forum></forum>
