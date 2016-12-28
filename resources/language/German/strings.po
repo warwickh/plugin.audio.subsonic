@@ -150,7 +150,7 @@ msgstr "Künstlerbewertung löschen"
 
 msgctxt "#30038"
 msgid "unstar album"
-msgstr "Album Bewertung löschen"
+msgstr "Albumbewertung löschen"
 
 msgctxt "#30039"
 msgid "Download track"
