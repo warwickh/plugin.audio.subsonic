@@ -1,21 +1,36 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.audio.subsonic" name="Subsonic" version="2.0.0" provider-name="BasilFX">
-    <requires>
-        <import addon="xbmc.python" version="2.19.0"/>
-    </requires>
-    <extension point="xbmc.python.pluginsource" library="addon.py">
-        <provides>audio</provides>
-    </extension>
+<addon id="plugin.audio.subsonic" name="Subsonic" version="2.0.5" provider-name="BasilFX,grosbouff">
+<requires>
+    <import addon="xbmc.python" version="2.14.0"/>
+    <import addon="script.module.dateutil" version="2.4.2"/>
+</requires>
+<extension point="xbmc.python.pluginsource" library="main.py">
+  <provides>audio</provides>
+</extension>
     <extension point="xbmc.addon.metadata">
         <summary lang="en">Subsonic music addon for Kodi.</summary>
-        <description lang="en">Subsonic music addon for Kodi. Stream your tunes directly to Kodi.</description>
+		<summary lang="de">Subsonic Musik Addon für Kodi.</summary>
+        <description lang="en">
+            Stream, star and download your tunes, directly to Kodi !
+            For feature requests / issues:
+            https://github.com/gordielachance/plugin.audio.subsonic/issues
+            Contributions are welcome:
+            https://github.com/gordielachance/plugin.audio.subsonic
+        </description>
+		<description lang="de">
+            Stream, star and download your tunes, directly to Kodi !
+            For feature requests / issues:
+            https://github.com/gordielachance/plugin.audio.subsonic/issues
+            Contributions are welcome:
+            https://github.com/gordielachance/plugin.audio.subsonic
+        </description>
         <disclaimer lang="en"></disclaimer>
-        <language>en</language>
+        <language>multi</language>
         <platform>all</platform>
         <license>MIT</license>
         <forum></forum>
         <website>http://www.subsonic.org</website>
-        <source>https://github.com/basilfx/plugin.audio.subsonic</source>
+        <source>https://github.com/gordielachance/plugin.audio.subsonic</source>
         <email></email>
     </extension>
 </addon>

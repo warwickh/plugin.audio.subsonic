@@ -1,0 +1,162 @@
+# XBMC Media Center language file
+# Addon Name: Subsonic
+# Addon id: plugin.audio.subsonic
+# Addon Provider: 
+# Addon Translate: Moshkopp 
+
+msgid ""
+msgstr ""
+
+
+msgctxt "#30000"
+msgid "General"
+msgstr ""
+
+msgctxt "#30001"
+msgid "Server"
+msgstr ""
+
+msgctxt "#30002"
+msgid "Server URL"
+msgstr ""
+
+msgctxt "#30003"
+msgid "username"
+msgstr ""
+
+msgctxt "#30004"
+msgid "password"
+msgstr ""
+
+msgctxt "#30005"
+msgid "Display"
+msgstr ""
+
+msgctxt "#30006"
+msgid "Albums per page"
+msgstr ""
+
+msgctxt "#30007"
+msgid "Tracks per page (ignored in albums & playlists)"
+msgstr ""
+
+msgctxt "#30008"
+msgid "Download"
+msgstr ""
+
+msgctxt "#30009"
+msgid "Download folder"
+msgstr ""
+
+msgctxt "#30010"
+msgid "Streaming"
+msgstr ""
+
+msgctxt "#30011"
+msgid "Transcode format"
+msgstr ""
+
+msgctxt "#30012"
+msgid "Bitrate"
+msgstr ""
+
+msgctxt "#30013"
+msgid "Advanced Settings"
+msgstr ""
+
+msgctxt "#30014"
+msgid "API version"
+msgstr ""
+
+msgctxt "#30016"
+msgid "Allow self signed certificates"
+msgstr ""
+
+msgctxt "#30017"
+msgid "Cache (in minutes) - not yet implemented"
+msgstr ""
+
+msgctxt "#30018"
+msgid "Cache datas time"
+msgstr ""
+
+msgctxt "#30019"
+msgid "Artist"
+msgstr ""
+
+msgctxt "#30020"
+msgid "Albums"
+msgstr ""
+
+msgctxt "#30021"
+msgid "Tracks"
+msgstr ""
+
+msgctxt "#30022"
+msgid "Playlists"
+msgstr ""
+
+msgctxt "#30023"
+msgid "Newest albums"
+msgstr ""
+
+msgctxt "#30024"
+msgid "Most played albums"
+msgstr ""
+
+msgctxt "#30025"
+msgid "Recently played albums"
+msgstr ""
+
+msgctxt "#30026"
+msgid "Random albums"
+msgstr ""
+
+msgctxt "#30029"
+msgid "Next page"
+msgstr ""
+
+
+msgctxt "#30030"
+msgid "Back to Menu"
+msgstr ""
+
+msgctxt "#30031"
+msgid "Item has been unstarred."
+msgstr ""
+
+msgctxt "#30032"
+msgid "Item has been starred!"
+msgstr ""
+
+msgctxt "#30033"
+msgid "Star track"
+msgstr ""
+
+msgctxt "#30034"
+msgid "Star artist"
+msgstr ""
+
+msgctxt "#30035"
+msgid "Star album"
+msgstr ""
+
+msgctxt "#30036"
+msgid "unstar track"
+msgstr ""
+
+msgctxt "#30037"
+msgid "unstar artist"
+msgstr ""
+
+msgctxt "#30038"
+msgid "unstar album"
+msgstr ""
+
+msgctxt "#30039"
+msgid "Download track"
+msgstr ""
+
+msgctxt "#30040"
+msgid "Download album"
+msgstr ""
