@@ -8,6 +8,7 @@
 
 import os
 import xbmcaddon
+lang = xbmcaddon.Addon()
 import xbmcplugin
 import xbmcgui
 import json
@@ -15,8 +16,11 @@ import shutil
 import dateutil.parser
 from datetime import datetime
 
+
+
 # Add the /lib folder to sys
 sys.path.append(xbmc.translatePath(os.path.join(xbmcaddon.Addon("plugin.audio.subsonic").getAddonInfo("path"), "lib")))
+
 
 import libsonic_extra #TO FIX - we should get rid of this and use only libsonic
 
@@ -79,22 +83,22 @@ def root(params):
 
     menus = {
         'artists': {
-            'name':     'Artists',
+            'name':     lang.getLocalizedString(30019),
             'callback': 'list_artists',
             'thumb': None
         },
         'albums': {
-            'name':     'Albums',
+            'name':     lang.getLocalizedString(30020),
             'callback': 'menu_albums',
             'thumb': None
         },
         'tracks': {
-            'name':     'Tracks',
+            'name':     lang.getLocalizedString(30021),
             'callback': 'menu_tracks',
             'thumb': None
         },
         'playlists': {
-            'name':     'Playlists',
+            'name':     lang.getLocalizedString(30022),
             'callback': 'list_playlists',
             'thumb': None
         }
@@ -141,22 +145,22 @@ def menu_albums(params):
 
     menus = {
         'albums_newest': {
-            'name':     'Newest albums',
+            'name':     lang.getLocalizedString(30023),
             'thumb':    None,
             'args':     {"ltype": "newest"}
         },
         'albums_frequent': {
-            'name':     'Most played albums',
+            'name':     lang.getLocalizedString(30024),
             'thumb': None,
             'args':     {"ltype": "frequent"}
         },
         'albums_recent': {
-            'name':     'Recently played albums',
+            'name':     lang.getLocalizedString(30025),
             'thumb': None,
             'args':     {"ltype": "recent"}
         },
         'albums_random': {
-            'name':     'Random albums',
+            'name':     lang.getLocalizedString(30026),
             'thumb': None,
             'args':     {"ltype": "random"}
         }
@@ -546,6 +550,7 @@ def list_tracks(params):
         #    items[item]['tracknumber'] = tracknumber
         
     # Starred
+    # Starred
     elif menu_id == 'tracks_starred':
         generator = connection.walk_tracks_starred()
         
@@ -553,7 +558,6 @@ def list_tracks(params):
     # Random
     elif menu_id == 'tracks_random':
         generator = connection.walk_tracks_random(**query_args)
-    
     # Filters
     #else:
         #TO WORK
@@ -744,7 +748,7 @@ def navigate_next(params):
     page =      int(params.get('page',1))
     page +=     1
     
-    title = "Next page (%d)" % (page)
+    title =  lang.getLocalizedString(30029) +"(%d)" % (page)
 
     return {
         'label':    title,
@@ -757,7 +761,7 @@ def navigate_next(params):
 
 def navigate_root():
     return {
-        'label':    "Back to menu",
+        'label':    lang.getLocalizedString(30030),
         'url':      plugin.get_url(action='root')
     }
 
@@ -870,10 +874,10 @@ def star_item(params):
     if did_action:
         
         if unstar:
-            message = 'Item has been unstarred.'
+            message = lang.getLocalizedString(30031)
             plugin.log('Unstarred %s #%s' % (type,json.dumps(ids)))
         else: #star
-            message = 'Item has been starred!'
+            message = lang.getLocalizedString(30032)
             plugin.log('Starred %s #%s' % (type,json.dumps(ids)))
             
         stars_cache_update(ids,unstar)
@@ -900,11 +904,11 @@ def context_action_star(type,id):
     if not starred:
 
         if type == 'track':
-            label = 'Star track'
+            label = lang.getLocalizedString(30033)
         elif type == 'artist':
-            label = 'Star artist'
+            label = lang.getLocalizedString(30034)
         elif type == 'album':
-            label = 'Star album'
+            label = lang.getLocalizedString(30035)
             
     else:
         
@@ -913,11 +917,11 @@ def context_action_star(type,id):
         #(since it is not available into the XML response from the server)
 
         if type == 'track':
-            label = 'Unstar track'
+            label = lang.getLocalizedString(30036)
         elif type == 'artist':
-            label = 'Unstar artist'
+            label = lang.getLocalizedString(30037)
         elif type == 'album':
-            label = 'Unstar album'
+            label = lang.getLocalizedString(30038)
     
     return (
         label, 
@@ -946,9 +950,9 @@ def can_star(type,ids = None):
     
 def context_action_download(type,id):
     if type == 'track':
-        label = 'Download track'
+        label = lang.getLocalizedString(30039)
     elif type == 'album':
-        label = 'Download album'
+        label = lang.getLocalizedString(30040)
 
     return (
         label, 
