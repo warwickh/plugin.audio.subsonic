@@ -82,7 +82,7 @@ msgstr "Speicher Daten Zeit"
 
 msgctxt "#30019"
 msgid "Artist"
-msgstr "Künstler"
+msgstr "Künstlern"
 
 msgctxt "#30020"
 msgid "Albums"

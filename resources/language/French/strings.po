@@ -81,7 +81,7 @@ msgid "Durée de cache des données"
 msgstr ""
 
 msgctxt "#30019"
-msgid "Artiste"
+msgid "Artistes"
 msgstr ""
 
 msgctxt "#30020"
