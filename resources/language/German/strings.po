@@ -21,11 +21,11 @@ msgid "Server URL"
 msgstr "Serveradresse"
 
 msgctxt "#30003"
-msgid "username"
+msgid "Username"
 msgstr "Benutzername"
 
 msgctxt "#30004"
-msgid "password"
+msgid "Password"
 msgstr "Passwort"
 
 msgctxt "#30005"
@@ -74,14 +74,14 @@ msgstr "Erlaube eigensignierte Zertifikate"
 
 msgctxt "#30017"
 msgid "Cache (in minutes) - not yet implemented"
-msgstr "Speicher (in Minuten) noch nicht eingebaut"
+msgstr "Speicher (in Minuten) - noch nicht eingebaut"
 
 msgctxt "#30018"
 msgid "Cache datas time"
 msgstr "Speicher Daten Zeit"
 
 msgctxt "#30019"
-msgid "Artist"
+msgid "Artists"
 msgstr "Künstlern"
 
 msgctxt "#30020"
@@ -129,33 +129,14 @@ msgid "Item has been starred!"
 msgstr "Bewertung hinzugefügt"
 
 msgctxt "#30033"
-msgid "Star track"
-msgstr "Lied bewerten"
+msgid "Star on Subsonic"
+msgstr "Bewerten auf Subsonic"
 
 msgctxt "#30034"
-msgid "Star artist"
-msgstr "Künstler bewerten"
+msgid "Unstar on Subsonic"
+msgstr "Löschen auf Subsonic"
 
 msgctxt "#30035"
-msgid "Star album"
-msgstr "Album bewerten"
+msgid "Download"
+msgstr "Herunterladen"
 
-msgctxt "#30036"
-msgid "unstar track"
-msgstr "Liedbewertung löschen"
-
-msgctxt "#30037"
-msgid "unstar artist"
-msgstr "Künstlerbewertung löschen"
-
-msgctxt "#30038"
-msgid "unstar album"
-msgstr "Albumbewertung löschen"
-
-msgctxt "#30039"
-msgid "Download track"
-msgstr "Lied herunterladen"
-
-msgctxt "#30040"
-msgid "Download album"
-msgstr "Album herunterladen"

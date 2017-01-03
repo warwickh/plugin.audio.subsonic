@@ -903,12 +903,7 @@ def context_action_star(type,id):
 
     if not starred:
 
-        if type == 'track':
-            label = lang.getLocalizedString(30033)
-        elif type == 'artist':
-            label = lang.getLocalizedString(30034)
-        elif type == 'album':
-            label = lang.getLocalizedString(30035)
+        label = lang.getLocalizedString(30033)
             
     else:
         
@@ -916,12 +911,7 @@ def context_action_star(type,id):
         #so we don't have to fetch the starred status for each item
         #(since it is not available into the XML response from the server)
 
-        if type == 'track':
-            label = lang.getLocalizedString(30036)
-        elif type == 'artist':
-            label = lang.getLocalizedString(30037)
-        elif type == 'album':
-            label = lang.getLocalizedString(30038)
+        label = lang.getLocalizedString(30034)
     
     return (
         label, 
@@ -949,11 +939,9 @@ def can_star(type,ids = None):
 
     
 def context_action_download(type,id):
-    if type == 'track':
-        label = lang.getLocalizedString(30039)
-    elif type == 'album':
-        label = lang.getLocalizedString(30040)
-
+    
+    label = lang.getLocalizedString(30035)
+    
     return (
         label, 
         'XBMC.RunPlugin(%s)' % plugin.get_url(action='download_item',type=type,id=id)

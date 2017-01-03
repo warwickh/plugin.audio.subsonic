@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.0.X
+Released XXX
+* Added multilanguage support
+
 ## v2.0.5
 Released 15 October 2016
 * Fixed images when listing entries

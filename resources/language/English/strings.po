@@ -21,11 +21,11 @@ msgid "Server URL"
 msgstr ""
 
 msgctxt "#30003"
-msgid "username"
+msgid "Username"
 msgstr ""
 
 msgctxt "#30004"
-msgid "password"
+msgid "Password"
 msgstr ""
 
 msgctxt "#30005"
@@ -130,33 +130,13 @@ msgid "Item has been starred!"
 msgstr ""
 
 msgctxt "#30033"
-msgid "Star track"
+msgid "Star on Subsonic"
 msgstr ""
 
 msgctxt "#30034"
-msgid "Star artist"
+msgid "Unstar on Subsonic"
 msgstr ""
 
 msgctxt "#30035"
-msgid "Star album"
-msgstr ""
-
-msgctxt "#30036"
-msgid "unstar track"
-msgstr ""
-
-msgctxt "#30037"
-msgid "unstar artist"
-msgstr ""
-
-msgctxt "#30038"
-msgid "unstar album"
-msgstr ""
-
-msgctxt "#30039"
-msgid "Download track"
-msgstr ""
-
-msgctxt "#30040"
-msgid "Download album"
+msgid "Download"
 msgstr ""
