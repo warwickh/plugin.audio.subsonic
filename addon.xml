@@ -9,12 +9,20 @@
 </extension>
     <extension point="xbmc.addon.metadata">
         <summary lang="en">Subsonic music addon for Kodi.</summary>
+        <summary lang="fr">Extension Subsonic pour Kodi.</summary>
 		<summary lang="de">Subsonic Musik Addon für Kodi.</summary>
         <description lang="en">
             Stream, star and download your tunes, directly to Kodi !
             For feature requests / issues:
             https://github.com/gordielachance/plugin.audio.subsonic/issues
             Contributions are welcome:
+            https://github.com/gordielachance/plugin.audio.subsonic
+        </description>
+        <description lang="fr">
+            Jouez, marquez vos favoris et téléchargez votre musique, directement dans Kodi !
+            Pour les demandes et problèmes :
+            https://github.com/gordielachance/plugin.audio.subsonic/issues
+            Les contributions sont les bienvenues :
             https://github.com/gordielachance/plugin.audio.subsonic
         </description>
 		<description lang="de">

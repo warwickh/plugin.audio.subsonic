@@ -1,0 +1,162 @@
+# XBMC Media Center language file
+# Addon Name: Subsonic
+# Addon id: plugin.audio.subsonic
+# Addon Provider: 
+# Addon Translate: Gordie 
+
+msgid ""
+msgstr ""
+
+
+msgctxt "#30000"
+msgid "Général"
+msgstr ""
+
+msgctxt "#30001"
+msgid "Serveur"
+msgstr ""
+
+msgctxt "#30002"
+msgid "URL du serveur"
+msgstr ""
+
+msgctxt "#30003"
+msgid "nom d'utilisateur"
+msgstr ""
+
+msgctxt "#30004"
+msgid "mot de passe"
+msgstr ""
+
+msgctxt "#30005"
+msgid "Affichage"
+msgstr ""
+
+msgctxt "#30006"
+msgid "Albums par page"
+msgstr ""
+
+msgctxt "#30007"
+msgid "Pistes par page (ignoré dans les albums et les playlists)"
+msgstr ""
+
+msgctxt "#30008"
+msgid "Télécharger"
+msgstr ""
+
+msgctxt "#30009"
+msgid "Télécharger le répertoire"
+msgstr ""
+
+msgctxt "#30010"
+msgid "Streaming"
+msgstr ""
+
+msgctxt "#30011"
+msgid "Format de transcodage"
+msgstr ""
+
+msgctxt "#30012"
+msgid "Bitrate"
+msgstr ""
+
+msgctxt "#30013"
+msgid "Paramètres avancés"
+msgstr ""
+
+msgctxt "#30014"
+msgid "Version de l'API"
+msgstr ""
+
+msgctxt "#30016"
+msgid "Autoriser les certificats auto-signés"
+msgstr ""
+
+msgctxt "#30017"
+msgid "Cache (en minutes) - pas encore implementé"
+msgstr ""
+
+msgctxt "#30018"
+msgid "Durée de cache des données"
+msgstr ""
+
+msgctxt "#30019"
+msgid "Artiste"
+msgstr ""
+
+msgctxt "#30020"
+msgid "Albums"
+msgstr ""
+
+msgctxt "#30021"
+msgid "Pistes"
+msgstr ""
+
+msgctxt "#30022"
+msgid "Listes de lecture"
+msgstr ""
+
+msgctxt "#30023"
+msgid "Nouveaux albums"
+msgstr ""
+
+msgctxt "#30024"
+msgid "Albums les plus joués"
+msgstr ""
+
+msgctxt "#30025"
+msgid "Albums récemment joués"
+msgstr ""
+
+msgctxt "#30026"
+msgid "Albums au hasard"
+msgstr ""
+
+msgctxt "#30029"
+msgid "Page suivante"
+msgstr ""
+
+
+msgctxt "#30030"
+msgid "Retour au menu"
+msgstr ""
+
+msgctxt "#30031"
+msgid "L'élément a été retiré des favoris"
+msgstr ""
+
+msgctxt "#30032"
+msgid L'élément a été ajouté aux favoris"
+msgstr ""
+
+msgctxt "#30033"
+msgid "Ajouter la piste aux favoris"
+msgstr ""
+
+msgctxt "#30034"
+msgid "Ajouter l'artiste aux favoris"
+msgstr ""
+
+msgctxt "#30035"
+msgid "Ajouter l'album aux favoris"
+msgstr ""
+
+msgctxt "#30036"
+msgid "Retirer la piste des favoris"
+msgstr ""
+
+msgctxt "#30037"
+msgid "Retirer l'artiste des favoris"
+msgstr ""
+
+msgctxt "#30038"
+msgid "Retirer l'album des favoris"
+msgstr ""
+
+msgctxt "#30039"
+msgid "Télécharger la piste"
+msgstr ""
+
+msgctxt "#30040"
+msgid "Télécharger l'album"
+msgstr ""
