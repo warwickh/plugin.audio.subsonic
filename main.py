@@ -8,7 +8,6 @@
 
 import os
 import xbmcaddon
-lang = xbmcaddon.Addon()
 import xbmcplugin
 import xbmcgui
 import json
@@ -16,7 +15,7 @@ import shutil
 import dateutil.parser
 from datetime import datetime
 
-
+lang = xbmcaddon.Addon()
 
 # Add the /lib folder to sys
 sys.path.append(xbmc.translatePath(os.path.join(xbmcaddon.Addon("plugin.audio.subsonic").getAddonInfo("path"), "lib")))
@@ -100,6 +99,11 @@ def root(params):
         'playlists': {
             'name':     lang.getLocalizedString(30022),
             'callback': 'list_playlists',
+            'thumb': None
+        },
+        'folders': {
+            'name':     'Browse',
+            'callback': 'list_folders',
             'thumb': None
         }
     }
@@ -801,10 +805,40 @@ def list_playlists(params):
         #content = None #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
     )
 
+@plugin.action()
+def list_folders(params):
+    # get connection
+    connection = get_connection()
+    
+    if connection is False:
+        return
+
+    listing = []
+
+    # Get items
+    items = connection.walk_folders()
+
+    # Iterate through items
+    for item in items:
+        entry = {
+            'label':    item.get('name'),
+            'url':      plugin.get_url(
+                        action=         'list_indexes',
+                        folder_id=      item.get('id'),
+                        menu_id=        params.get('menu_id')
+
+            )
+        }
+        listing.append(entry)
+        
+    return plugin.create_listing(
+        listing
+    )
+
 def get_entry_playlist(item,params):
     image = connection.getCoverArtUrl(item.get('coverArt'))
     return {
-        'label':    item['name'],
+        'label':    item.get('name'),
         'thumb':    image,
         'fanart':   image,
         'url':      plugin.get_url(
