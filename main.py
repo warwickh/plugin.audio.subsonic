@@ -806,6 +806,37 @@ def list_playlists(params):
     )
 
 @plugin.action()
+def list_indexes(params):
+    # get connection
+    connection = get_connection()
+    
+    if connection is False:
+        return
+
+    listing = []
+    
+    # Get items
+    folder_id = params.get('folder_id')
+    items = connection.walk_index(folder_id)
+    
+    plugin.log('list_indexes:')
+    # Iterate through items
+    for item in items:
+        entry = {
+            'label':    item.get('name'),
+            'url':      plugin.get_url(
+                        action=     'list_albums',
+                        artist_id=  item.get('id'),
+                        menu_id=    params.get('menu_id')
+            )
+        }
+        listing.append(entry)
+        
+    return plugin.create_listing(
+        listing
+    )
+
+@plugin.action()
 def list_folders(params):
     # get connection
     connection = get_connection()

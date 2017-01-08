@@ -296,12 +296,12 @@ class SubsonicClient(libsonic.Connection):
         else:
             return super(SubsonicClient, self)._doBinReq(*args, **kwargs)
 
-    def walk_index(self):
+    def walk_index(self, folder_id=None):
         """
         Request Subsonic's index and iterate each item.
         """
 
-        response = self.getIndexes()
+        response = self.getIndexes(folder_id)
 
         for index in response["indexes"]["index"]:
             for index in index["artist"]:
@@ -333,6 +333,12 @@ class SubsonicClient(libsonic.Connection):
         response = self.getPlaylist(playlist_id)
 
         for child in response["playlist"]["entry"]:
+            yield child
+            
+    def walk_folders(self):
+        response = self.getMusicFolders()
+        
+        for child in response["musicFolders"]["musicFolder"]:
             yield child
 
     def walk_directory(self, directory_id):
