@@ -861,10 +861,12 @@ def list_folders(params):
             )
         }
         listing.append(entry)
-        
-    return plugin.create_listing(
-        listing
-    )
+
+    if len(listing) == 1:
+        plugin.log('One single Media Folder found; do return listing from list_indexes()...')
+        return list_indexes(params)
+    else:
+        return plugin.create_listing(listing)
 
 def get_entry_playlist(item,params):
     image = connection.getCoverArtUrl(item.get('coverArt'))
