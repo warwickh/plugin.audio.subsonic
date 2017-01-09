@@ -20,9 +20,9 @@
   	<category label="30013">
         <setting label="30001" type="lsep" />
         <setting label="30014" id="apiversion" type="labelenum"  values="1.11.0|1.12.0|1.13.0|1.14.0" default="1.13.0"/>
-		<setting id="insecure" type="bool"  default="false" />
-        <setting label="30016" type="lsep" />
-        <setting label="30018" id="cachetime" type="labelenum"  default="5" values="1|5|15|30|60|120|180|720|1440"/>
+		<setting label="30016" id="insecure" type="bool"  default="false" />
+        <setting label="30017" type="lsep" />
+        <setting label="30018" id="cachetime" type="labelenum"  default="15" values="1|5|15|30|60|120|180|720|1440"/>
 		
 	</category>
 </settings>
