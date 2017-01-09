@@ -2,6 +2,7 @@
 
 ## v2.0.X
 Released XXX
+* Browse/Library menus (file structure vs ID3 tags)
 * Added multilanguage support
 
 ## v2.0.5

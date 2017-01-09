@@ -81,9 +81,14 @@ def root(params):
     listing = []
 
     menus = {
-        'artists': {
+        'folders': {
+            'name':     'Browse',
+            'callback': 'browse_folders',
+            'thumb': None
+        },
+        'library': {
             'name':     lang.getLocalizedString(30019),
-            'callback': 'list_artists',
+            'callback': 'browse_library',
             'thumb': None
         },
         'albums': {
@@ -99,11 +104,6 @@ def root(params):
         'playlists': {
             'name':     lang.getLocalizedString(30022),
             'callback': 'list_playlists',
-            'thumb': None
-        },
-        'folders': {
-            'name':     'Browse',
-            'callback': 'list_folders',
             'thumb': None
         }
     }
@@ -131,7 +131,7 @@ def root(params):
         #succeeded = True, #if False Kodi won’t open a new listing and stays on the current level.
         #update_listing = False, #if True, Kodi won’t open a sub-listing but refresh the current one. 
         #cache_to_disk = True, #cache this view to disk.
-        #sort_methods = None, #he list of integer constants representing virtual folder sort methods.
+        sort_methods = None, #he list of integer constants representing virtual folder sort methods.
         #view_mode = None, #a numeric code for a skin view mode. View mode codes are different in different skins except for 50 (basic listing).
         #content = None #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
     )
@@ -256,7 +256,7 @@ def menu_tracks(params):
 
 @plugin.action()
 #@plugin.cached(cachetime) #if cache is enabled, cache data for the following function
-def list_artists(params):
+def browse_library(params):
     
     # get connection
     connection = get_connection()
@@ -806,38 +806,7 @@ def list_playlists(params):
     )
 
 @plugin.action()
-def list_indexes(params):
-    # get connection
-    connection = get_connection()
-    
-    if connection is False:
-        return
-
-    listing = []
-    
-    # Get items
-    folder_id = params.get('folder_id')
-    items = connection.walk_index(folder_id)
-    
-    plugin.log('list_indexes:')
-    # Iterate through items
-    for item in items:
-        entry = {
-            'label':    item.get('name'),
-            'url':      plugin.get_url(
-                        action=     'list_albums',
-                        artist_id=  item.get('id'),
-                        menu_id=    params.get('menu_id')
-            )
-        }
-        listing.append(entry)
-        
-    return plugin.create_listing(
-        listing
-    )
-
-@plugin.action()
-def list_folders(params):
+def browse_folders(params):
     # get connection
     connection = get_connection()
     
@@ -854,7 +823,7 @@ def list_folders(params):
         entry = {
             'label':    item.get('name'),
             'url':      plugin.get_url(
-                        action=         'list_indexes',
+                        action=         'browse_indexes',
                         folder_id=      item.get('id'),
                         menu_id=        params.get('menu_id')
 
@@ -863,10 +832,78 @@ def list_folders(params):
         listing.append(entry)
 
     if len(listing) == 1:
-        plugin.log('One single Media Folder found; do return listing from list_indexes()...')
-        return list_indexes(params)
+        plugin.log('One single Media Folder found; do return listing from browse_indexes()...')
+        return browse_indexes(params)
     else:
         return plugin.create_listing(listing)
+
+@plugin.action()
+def browse_indexes(params):
+    # get connection
+    connection = get_connection()
+    
+    if connection is False:
+        return
+
+    listing = []
+    
+    # Get items 
+    # optional folder ID
+    folder_id = params.get('folder_id')
+    items = connection.walk_index(folder_id)
+
+    # Iterate through items
+    for item in items:
+        entry = {
+            'label':    item.get('name'),
+            'url':      plugin.get_url(
+                        action=     'list_directory',
+                        id=         item.get('id'),
+                        menu_id=    params.get('menu_id')
+            )
+        }
+        listing.append(entry)
+        
+    return plugin.create_listing(
+        listing
+    )
+
+@plugin.action()
+def list_directory(params):
+    # get connection
+    connection = get_connection()
+    
+    if connection is False:
+        return
+
+    listing = []
+    
+    # Get items
+    id = params.get('id')
+    items = connection.walk_directory(id)
+    
+    # Iterate through items
+    for item in items:
+        
+        #is a directory
+        if (item.get('isDir')==True):
+            entry = {
+                'label':    item.get('title'),
+                'url':      plugin.get_url(
+                            action=     'list_directory',
+                            id=         item.get('id'),
+                            menu_id=    params.get('menu_id')
+                )
+            }
+        else:
+            entry = get_entry_track(item,params)
+        
+
+        listing.append(entry)
+        
+    return plugin.create_listing(
+        listing
+    )
 
 def get_entry_playlist(item,params):
     image = connection.getCoverArtUrl(item.get('coverArt'))

@@ -81,8 +81,8 @@ msgid "Cache datas time"
 msgstr "Speicher Daten Zeit"
 
 msgctxt "#30019"
-msgid "Artists"
-msgstr "Künstler"
+msgid "Library"
+msgstr "Bibliothek"
 
 msgctxt "#30020"
 msgid "Albums"

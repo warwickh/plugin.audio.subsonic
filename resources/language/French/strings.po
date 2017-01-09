@@ -46,7 +46,7 @@ msgstr "Télécharger"
 
 msgctxt "#30009"
 msgid "Download folder"
-msgstr "Télécharger le répertoire"
+msgstr "Répertoire de téléchargement"
 
 msgctxt "#30010"
 msgid "Streaming"
@@ -81,8 +81,8 @@ msgid "Cache datas time"
 msgstr "Durée du cache pour les données"
 
 msgctxt "#30019"
-msgid "Artists"
-msgstr "Artistes"
+msgid "Library"
+msgstr "Bibliothèque"
 
 msgctxt "#30020"
 msgid "Albums"
