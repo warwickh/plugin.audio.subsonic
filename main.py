@@ -15,8 +15,6 @@ import shutil
 import dateutil.parser
 from datetime import datetime
 
-lang = xbmcaddon.Addon()
-
 # Add the /lib folder to sys
 sys.path.append(xbmc.translatePath(os.path.join(xbmcaddon.Addon("plugin.audio.subsonic").getAddonInfo("path"), "lib")))
 
@@ -82,27 +80,27 @@ def root(params):
 
     menus = {
         'folders': {
-            'name':     lang.getLocalizedString(30038),
+            'name':     Addon().get_localized_string(30038),
             'callback': 'browse_folders',
             'thumb': None
         },
         'library': {
-            'name':     lang.getLocalizedString(30019),
+            'name':     Addon().get_localized_string(30019),
             'callback': 'browse_library',
             'thumb': None
         },
         'albums': {
-            'name':     lang.getLocalizedString(30020),
+            'name':     Addon().get_localized_string(30020),
             'callback': 'menu_albums',
             'thumb': None
         },
         'tracks': {
-            'name':     lang.getLocalizedString(30021),
+            'name':     Addon().get_localized_string(30021),
             'callback': 'menu_tracks',
             'thumb': None
         },
         'playlists': {
-            'name':     lang.getLocalizedString(30022),
+            'name':     Addon().get_localized_string(30022),
             'callback': 'list_playlists',
             'thumb': None
         }
@@ -149,22 +147,22 @@ def menu_albums(params):
 
     menus = {
         'albums_newest': {
-            'name':     lang.getLocalizedString(30023),
+            'name':     Addon().get_localized_string(30023),
             'thumb':    None,
             'args':     {"ltype": "newest"}
         },
         'albums_frequent': {
-            'name':     lang.getLocalizedString(30024),
+            'name':     Addon().get_localized_string(30024),
             'thumb': None,
             'args':     {"ltype": "frequent"}
         },
         'albums_recent': {
-            'name':     lang.getLocalizedString(30025),
+            'name':     Addon().get_localized_string(30025),
             'thumb': None,
             'args':     {"ltype": "recent"}
         },
         'albums_random': {
-            'name':     lang.getLocalizedString(30026),
+            'name':     Addon().get_localized_string(30026),
             'thumb': None,
             'args':     {"ltype": "random"}
         }
@@ -215,11 +213,11 @@ def menu_tracks(params):
 
     menus = {
         'tracks_starred': {
-            'name':             lang.getLocalizedString(30036),
+            'name':             Addon().get_localized_string(30036),
             'thumb':            None
         },
         'tracks_random': {
-            'name':             lang.getLocalizedString(30037),
+            'name':             Addon().get_localized_string(30037),
             'thumb':            None
         }
     }
@@ -687,10 +685,10 @@ def star_item(params):
     if did_action:
         
         if unstar:
-            message = lang.getLocalizedString(30031)
+            message = Addon().get_localized_string(30031)
             plugin.log('Unstarred %s #%s' % (type,json.dumps(ids)))
         else: #star
-            message = lang.getLocalizedString(30032)
+            message = Addon().get_localized_string(30032)
             plugin.log('Starred %s #%s' % (type,json.dumps(ids)))
             
         stars_cache_update(ids,unstar)
@@ -1020,7 +1018,7 @@ def navigate_next(params):
     page =      int(params.get('page',1))
     page +=     1
     
-    title =  lang.getLocalizedString(30029) +"(%d)" % (page)
+    title =  Addon().get_localized_string(30029) +"(%d)" % (page)
 
     return {
         'label':    title,
@@ -1033,7 +1031,7 @@ def navigate_next(params):
 
 def navigate_root():
     return {
-        'label':    lang.getLocalizedString(30030),
+        'label':    Addon().get_localized_string(30030),
         'url':      plugin.get_url(action='root')
     }
 
@@ -1048,7 +1046,7 @@ def context_action_star(type,id):
 
     if not starred:
 
-        label = lang.getLocalizedString(30033)
+        label = Addon().get_localized_string(30033)
             
     else:
         
@@ -1056,7 +1054,7 @@ def context_action_star(type,id):
         #so we don't have to fetch the starred status for each item
         #(since it is not available into the XML response from the server)
 
-        label = lang.getLocalizedString(30034)
+        label = Addon().get_localized_string(30034)
     
     return (
         label, 
@@ -1085,7 +1083,7 @@ def can_star(type,ids = None):
     
 def context_action_download(type,id):
     
-    label = lang.getLocalizedString(30035)
+    label = Addon().get_localized_string(30035)
     
     return (
         label, 
