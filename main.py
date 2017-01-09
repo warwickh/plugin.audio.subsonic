@@ -255,8 +255,114 @@ def menu_tracks(params):
     )
 
 @plugin.action()
-#@plugin.cached(cachetime) #if cache is enabled, cache data for the following function
+#@plugin.cached(cachetime) # cache (in minutes)
+def browse_folders(params):
+    # get connection
+    connection = get_connection()
+    
+    if connection is False:
+        return
+
+    listing = []
+
+    # Get items
+    items = connection.walk_folders()
+
+    # Iterate through items
+    for item in items:
+        entry = {
+            'label':    item.get('name'),
+            'url':      plugin.get_url(
+                        action=         'browse_indexes',
+                        folder_id=      item.get('id'),
+                        menu_id=        params.get('menu_id')
+
+            )
+        }
+        listing.append(entry)
+
+    if len(listing) == 1:
+        plugin.log('One single Media Folder found; do return listing from browse_indexes()...')
+        return browse_indexes(params)
+    else:
+        return plugin.create_listing(listing)
+
+@plugin.action()
+#@plugin.cached(cachetime) # cache (in minutes)
+def browse_indexes(params):
+    # get connection
+    connection = get_connection()
+    
+    if connection is False:
+        return
+
+    listing = []
+    
+    # Get items 
+    # optional folder ID
+    folder_id = params.get('folder_id')
+    items = connection.walk_index(folder_id)
+
+    # Iterate through items
+    for item in items:
+        entry = {
+            'label':    item.get('name'),
+            'url':      plugin.get_url(
+                        action=     'list_directory',
+                        id=         item.get('id'),
+                        menu_id=    params.get('menu_id')
+            )
+        }
+        listing.append(entry)
+        
+    return plugin.create_listing(
+        listing
+    )
+
+@plugin.action()
+#@plugin.cached(cachetime) # cache (in minutes)
+def list_directory(params):
+    # get connection
+    connection = get_connection()
+    
+    if connection is False:
+        return
+
+    listing = []
+    
+    # Get items
+    id = params.get('id')
+    items = connection.walk_directory(id)
+    
+    # Iterate through items
+    for item in items:
+        
+        #is a directory
+        if (item.get('isDir')==True):
+            entry = {
+                'label':    item.get('title'),
+                'url':      plugin.get_url(
+                            action=     'list_directory',
+                            id=         item.get('id'),
+                            menu_id=    params.get('menu_id')
+                )
+            }
+        else:
+            entry = get_entry_track(item,params)
+        
+
+        listing.append(entry)
+        
+    return plugin.create_listing(
+        listing
+    )
+
+@plugin.action()
+#@plugin.cached(cachetime) # cache (in minutes)
 def browse_library(params):
+    """
+    List artists from the library (ID3 tags)
+    """
     
     # get connection
     connection = get_connection()
@@ -295,28 +401,13 @@ def browse_library(params):
         content = 'artists' #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
     )
 
-def get_entry_artist(item,params):
-    image = connection.getCoverArtUrl(item.get('coverArt'))
-    return {
-        'label':    get_starred_label(item.get('id'),item.get('name')),
-        'thumb':    image,
-        'fanart':   image,
-        'url':      plugin.get_url(
-                        action=     'list_albums',
-                        artist_id=  item.get('id'),
-                        menu_id=    params.get('menu_id')
-                    ),
-        'info': {
-            'music': { ##http://romanvm.github.io/Kodistubs/_autosummary/xbmcgui.html#xbmcgui.ListItem.setInfo
-                'count':    item.get('albumCount'),
-                'artist':   item.get('name')
-            }
-        }
-    }
-
 @plugin.action()
-#@plugin.cached(cachetime) #if cache is enabled, cache data for the following function
+#@plugin.cached(cachetime) #cache (in minutes)
 def list_albums(params):
+    
+    """
+    List albums from the library (ID3 tags)
+    """
     
     listing = []
     
@@ -387,125 +478,8 @@ def list_albums(params):
         content = 'albums' #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
     )
 
-def get_entry_album(item, params):
-    
-    image = connection.getCoverArtUrl(item.get('coverArt'))
-
-    entry = {
-        'label':    get_entry_album_label(item,params.get('hide_artist',False)),
-        'thumb':    image,
-        'fanart':   image,
-        'url': plugin.get_url(
-            action=         'list_tracks',
-            album_id=       item.get('id'),
-            hide_artist=    item.get('hide_artist'),
-            menu_id=        params.get('menu_id')
-        ),
-        'info': {
-            'music': { ##http://romanvm.github.io/Kodistubs/_autosummary/xbmcgui.html#xbmcgui.ListItem.setInfo
-                'count':    item.get('songCount'),
-                'date':     convert_date_from_iso8601(item.get('created')), #date added
-                'duration': item.get('duration'),
-                'artist':   item.get('artist'),
-                'album':    item.get('name'),
-                'year':     item.get('year')
-            }
-        }
-    }
-    
-    #context menu actions
-    context_actions = []
-
-    if can_star('album',item.get('id')):
-        action_star =  context_action_star('album',item.get('id'))
-        context_actions.append(action_star)
-
-    if can_download('album',item.get('id')):
-        action_download =  context_action_download('album',item.get('id'))
-        context_actions.append(action_download)
-
-    if len(context_actions) > 0:
-        entry['context_menu'] = context_actions
-
-    return entry
-
-#sort method for list types
-#https://github.com/xbmc/xbmc/blob/master/xbmc/SortFileItem.h
-#TO FIX _DATE or _DATEADDED ?
-def get_sort_methods(type,params):
-    
-    #TO FIX
-    #actually it seems possible to 'restore' the default sorting (by labels)
-    #so our starred items don't get colorized.
-    #so do not sort stuff
-    return []
-
-    sortable = [
-        xbmcplugin.SORT_METHOD_NONE,
-        xbmcplugin.SORT_METHOD_LABEL,
-        xbmcplugin.SORT_METHOD_UNSORTED
-    ]
-    
-    if type is 'artists':
-        
-        artists = [
-            xbmcplugin.SORT_METHOD_ARTIST
-        ]
-
-        sortable = sortable + artists
-        
-    elif type is 'albums':
-        
-        albums = [
-            xbmcplugin.SORT_METHOD_ALBUM,
-            xbmcplugin.SORT_METHOD_DURATION,
-            xbmcplugin.SORT_METHOD_DATE,
-            #xbmcplugin.SORT_METHOD_YEAR
-        ]
-        
-        if not params.get('hide_artist',False):
-            albums.append(xbmcplugin.SORT_METHOD_ARTIST)
-
-        sortable = sortable + albums
-        
-    elif type is 'tracks':
-
-        tracks = [
-            xbmcplugin.SORT_METHOD_TITLE,
-            xbmcplugin.SORT_METHOD_ALBUM,
-            xbmcplugin.SORT_METHOD_TRACKNUM,
-            #xbmcplugin.SORT_METHOD_YEAR,
-            xbmcplugin.SORT_METHOD_GENRE,
-            xbmcplugin.SORT_METHOD_SIZE,
-            xbmcplugin.SORT_METHOD_DURATION,
-            xbmcplugin.SORT_METHOD_DATE,
-            xbmcplugin.SORT_METHOD_BITRATE
-        ]
-        
-        if not params.get('hide_artist',False):
-            tracks.append(xbmcplugin.SORT_METHOD_ARTIST)
-        
-        if params.get('playlist_id',False):
-            xbmcplugin.SORT_METHOD_PLAYLIST_ORDER,
-        
-        
-        sortable = sortable + tracks
-        
-    elif type is 'playlists':
-
-        playlists = [
-            xbmcplugin.SORT_METHOD_TITLE,
-            xbmcplugin.SORT_METHOD_DURATION,
-            xbmcplugin.SORT_METHOD_DATE
-        ]
-        
-        sortable = sortable + playlists
-
-    return sortable
-    
-
 @plugin.action()
-#@plugin.cached(cachetime) #if cache is enabled, cache data for the following function
+#@plugin.cached(cachetime) #cache (in minutes)
 def list_tracks(params):
     
     menu_id = params.get('menu_id')
@@ -611,171 +585,8 @@ def list_tracks(params):
 #run this function every time we get starred items.
 #ids can be a single ID or a list
 #using a set makes sure that IDs will be unique.
-def stars_cache_update(ids,remove=False):
-
-    #get existing cache set
-    starred = stars_cache_get()
-    
-    #make sure this is a list
-    if not isinstance(ids, list):
-        ids = [ids]
-    
-    #abord if empty
-    if len(ids) == 0:
-        return
-    
-    #parse items
-    for item_id in ids:
-        item_id = int(item_id)
-        if not remove:
-            starred.add(item_id)
-        else:
-            starred.remove(item_id)
-    
-    #store them
-    with plugin.get_storage() as storage:
-        storage['starred_ids'] = starred
-        
-    plugin.log('stars_cache_update:')
-    plugin.log(starred)
-
-
-def stars_cache_get():
-    with plugin.get_storage() as storage:
-        starred = storage.get('starred_ids',set())
-
-    plugin.log('stars_cache_get:')
-    plugin.log(starred)
-    return starred
-
-def is_starred(id):
-    starred = stars_cache_get()
-    id = int(id)
-    if id in starred:
-        return True
-    else:
-        return False
-
-def get_entry_track(item,params):
-    
-    menu_id = params.get('menu_id')
-    image = connection.getCoverArtUrl(item.get('coverArt'))
-
-    entry = {
-        'label':    get_entry_track_label(item,params.get('hide_artist')),
-        'thumb':    image,
-        'fanart':   image,
-        'url':      plugin.get_url(
-                        action=     'play_track',
-                        id=         item.get('id'),
-                        menu_id=    menu_id
-                    ),
-        'is_playable':  True,
-        'mime':         item.get("contentType"),
-        'info': {'music': { #http://romanvm.github.io/Kodistubs/_autosummary/xbmcgui.html#xbmcgui.ListItem.setInfo
-            'title':        item.get('title'),
-            'album':        item.get('album'),
-            'artist':       item.get('artist'),
-            'tracknumber':  item.get('tracknumber'),
-            'year':         item.get('year'),
-            'genre':        item.get('genre'),
-            'size':         item.get('size'),
-            'duration':     item.get('duration'),
-            'date':         item.get('created')
-            }
-        }
-    }
-    
-    #context menu actions
-    context_actions = []
-
-    if can_star('track',item.get('id')):
-        action_star =  context_action_star('track',item.get('id'))
-        context_actions.append(action_star)
-
-    if can_download('track',item.get('id')):
-        action_download =  context_action_download('track',item.get('id'))
-        context_actions.append(action_download)
-
-    if len(context_actions) > 0:
-        entry['context_menu'] = context_actions
-    
-
-    return entry
-
-def get_starred_label(id,label):
-    if is_starred(id):
-        label = '[COLOR=FF00FF00]%s[/COLOR]' % label
-    return label
-
-def get_entry_track_label(item,hide_artist = False):
-    if hide_artist:
-        label = item.get('title', '<Unknown>')
-    else:
-        label = '%s - %s' % (
-            item.get('artist', '<Unknown>'),
-            item.get('title', '<Unknown>')
-        )
-
-    return get_starred_label(item.get('id'),label)
-
-def get_entry_album_label(item,hide_artist = False):
-    if hide_artist:
-        label = item.get('name', '<Unknown>')
-    else:
-        label = '%s - %s' % (item.get('artist', '<Unknown>'),
-                             item.get('name', '<Unknown>'))
-    return get_starred_label(item.get('id'),label)
-
-
 @plugin.action()
-def play_track(params):
-    
-    id = params['id']
-    plugin.log('play_track #' + id);
-    
-    # get connection
-    connection = get_connection()
-    
-    if connection is False:
-        return
-
-    url = connection.streamUrl(sid=id,
-        maxBitRate=Addon().get_setting('bitrate_streaming'),
-        tformat=Addon().get_setting('transcode_format_streaming')
-    )
-
-    return url
-
-def navigate_next(params):
-  
-    page =      int(params.get('page',1))
-    page +=     1
-    
-    title =  lang.getLocalizedString(30029) +"(%d)" % (page)
-
-    return {
-        'label':    title,
-        'url':      plugin.get_url(
-                        action=         params.get('action',None),
-                        page=           page,
-                        query_args=     params.get('query_args',None)
-                    )
-    }
-
-def navigate_root():
-    return {
-        'label':    lang.getLocalizedString(30030),
-        'url':      plugin.get_url(action='root')
-    }
-
-#converts a date string from eg. '2012-04-17T19:53:44' to eg. '17.04.2012'
-def convert_date_from_iso8601(iso8601):
-    date_obj = dateutil.parser.parse(iso8601)
-    return date_obj.strftime('%d.%m.%Y')
-
-@plugin.action()
-#@plugin.cached(cachetime) #if cache is enabled, cache data for the following function
+#@plugin.cached(cachetime) #cache (in minutes)
 def list_playlists(params):
     
     # get connection
@@ -806,126 +617,24 @@ def list_playlists(params):
     )
 
 @plugin.action()
-def browse_folders(params):
+def play_track(params):
+    
+    id = params['id']
+    plugin.log('play_track #' + id);
+    
     # get connection
     connection = get_connection()
     
     if connection is False:
         return
 
-    listing = []
-
-    # Get items
-    items = connection.walk_folders()
-
-    # Iterate through items
-    for item in items:
-        entry = {
-            'label':    item.get('name'),
-            'url':      plugin.get_url(
-                        action=         'browse_indexes',
-                        folder_id=      item.get('id'),
-                        menu_id=        params.get('menu_id')
-
-            )
-        }
-        listing.append(entry)
-
-    if len(listing) == 1:
-        plugin.log('One single Media Folder found; do return listing from browse_indexes()...')
-        return browse_indexes(params)
-    else:
-        return plugin.create_listing(listing)
-
-@plugin.action()
-def browse_indexes(params):
-    # get connection
-    connection = get_connection()
-    
-    if connection is False:
-        return
-
-    listing = []
-    
-    # Get items 
-    # optional folder ID
-    folder_id = params.get('folder_id')
-    items = connection.walk_index(folder_id)
-
-    # Iterate through items
-    for item in items:
-        entry = {
-            'label':    item.get('name'),
-            'url':      plugin.get_url(
-                        action=     'list_directory',
-                        id=         item.get('id'),
-                        menu_id=    params.get('menu_id')
-            )
-        }
-        listing.append(entry)
-        
-    return plugin.create_listing(
-        listing
+    url = connection.streamUrl(sid=id,
+        maxBitRate=Addon().get_setting('bitrate_streaming'),
+        tformat=Addon().get_setting('transcode_format_streaming')
     )
 
-@plugin.action()
-def list_directory(params):
-    # get connection
-    connection = get_connection()
-    
-    if connection is False:
-        return
+    return url
 
-    listing = []
-    
-    # Get items
-    id = params.get('id')
-    items = connection.walk_directory(id)
-    
-    # Iterate through items
-    for item in items:
-        
-        #is a directory
-        if (item.get('isDir')==True):
-            entry = {
-                'label':    item.get('title'),
-                'url':      plugin.get_url(
-                            action=     'list_directory',
-                            id=         item.get('id'),
-                            menu_id=    params.get('menu_id')
-                )
-            }
-        else:
-            entry = get_entry_track(item,params)
-        
-
-        listing.append(entry)
-        
-    return plugin.create_listing(
-        listing
-    )
-
-def get_entry_playlist(item,params):
-    image = connection.getCoverArtUrl(item.get('coverArt'))
-    return {
-        'label':    item.get('name'),
-        'thumb':    image,
-        'fanart':   image,
-        'url':      plugin.get_url(
-                        action=         'list_tracks',
-                        playlist_id=    item.get('id'),
-                        menu_id=        params.get('menu_id')
-
-                    ),
-        'info': {'music': { ##http://romanvm.github.io/Kodistubs/_autosummary/xbmcgui.html#xbmcgui.ListItem.setInfo
-            'title':        item.get('name'),
-            'count':        item.get('songCount'),
-            'duration':     item.get('duration'),
-            'date':         convert_date_from_iso8601(item.get('created'))
-        }}
-    }
-
-#star (or unstar) an item
 @plugin.action()
 def star_item(params):
 
@@ -1001,6 +710,338 @@ def star_item(params):
         
 
         
+@plugin.action()
+def download_item(params):
+
+    id=     params.get('id'); #can be single or lists of IDs
+    type=    params.get('type');
+    
+    #validate path
+    download_folder = Addon().get_setting('download_folder')
+    
+    if not download_folder:
+        popup("Please set a directory for your downloads")
+        plugin.log_error("No directory set for downloads")
+
+    #validate capability
+    if not can_download(type,id):
+        return;
+    
+    if type == 'track':
+        did_action = download_tracks(id)
+    elif type == 'album':
+        did_action = download_album(id)
+    
+    if did_action:
+        plugin.log('Downloaded %s #%s' % (type,id))
+        popup('Item has been downloaded!')
+        
+    else:
+        plugin.log_error('Unable to downloaded %s #%s' % (type,id))
+
+    return did_action
+    
+def get_entry_playlist(item,params):
+    image = connection.getCoverArtUrl(item.get('coverArt'))
+    return {
+        'label':    item.get('name'),
+        'thumb':    image,
+        'fanart':   image,
+        'url':      plugin.get_url(
+                        action=         'list_tracks',
+                        playlist_id=    item.get('id'),
+                        menu_id=        params.get('menu_id')
+
+                    ),
+        'info': {'music': { ##http://romanvm.github.io/Kodistubs/_autosummary/xbmcgui.html#xbmcgui.ListItem.setInfo
+            'title':        item.get('name'),
+            'count':        item.get('songCount'),
+            'duration':     item.get('duration'),
+            'date':         convert_date_from_iso8601(item.get('created'))
+        }}
+    }
+
+#star (or unstar) an item
+def get_entry_artist(item,params):
+    image = connection.getCoverArtUrl(item.get('coverArt'))
+    return {
+        'label':    get_starred_label(item.get('id'),item.get('name')),
+        'thumb':    image,
+        'fanart':   image,
+        'url':      plugin.get_url(
+                        action=     'list_albums',
+                        artist_id=  item.get('id'),
+                        menu_id=    params.get('menu_id')
+                    ),
+        'info': {
+            'music': { ##http://romanvm.github.io/Kodistubs/_autosummary/xbmcgui.html#xbmcgui.ListItem.setInfo
+                'count':    item.get('albumCount'),
+                'artist':   item.get('name')
+            }
+        }
+    }
+
+def get_entry_album(item, params):
+    
+    image = connection.getCoverArtUrl(item.get('coverArt'))
+
+    entry = {
+        'label':    get_entry_album_label(item,params.get('hide_artist',False)),
+        'thumb':    image,
+        'fanart':   image,
+        'url': plugin.get_url(
+            action=         'list_tracks',
+            album_id=       item.get('id'),
+            hide_artist=    item.get('hide_artist'),
+            menu_id=        params.get('menu_id')
+        ),
+        'info': {
+            'music': { ##http://romanvm.github.io/Kodistubs/_autosummary/xbmcgui.html#xbmcgui.ListItem.setInfo
+                'count':    item.get('songCount'),
+                'date':     convert_date_from_iso8601(item.get('created')), #date added
+                'duration': item.get('duration'),
+                'artist':   item.get('artist'),
+                'album':    item.get('name'),
+                'year':     item.get('year')
+            }
+        }
+    }
+    
+    #context menu actions
+    context_actions = []
+
+    if can_star('album',item.get('id')):
+        action_star =  context_action_star('album',item.get('id'))
+        context_actions.append(action_star)
+
+    if can_download('album',item.get('id')):
+        action_download =  context_action_download('album',item.get('id'))
+        context_actions.append(action_download)
+
+    if len(context_actions) > 0:
+        entry['context_menu'] = context_actions
+
+    return entry
+
+#sort method for list types
+#https://github.com/xbmc/xbmc/blob/master/xbmc/SortFileItem.h
+#TO FIX _DATE or _DATEADDED ?
+def get_entry_track(item,params):
+    
+    menu_id = params.get('menu_id')
+    image = connection.getCoverArtUrl(item.get('coverArt'))
+
+    entry = {
+        'label':    get_entry_track_label(item,params.get('hide_artist')),
+        'thumb':    image,
+        'fanart':   image,
+        'url':      plugin.get_url(
+                        action=     'play_track',
+                        id=         item.get('id'),
+                        menu_id=    menu_id
+                    ),
+        'is_playable':  True,
+        'mime':         item.get("contentType"),
+        'info': {'music': { #http://romanvm.github.io/Kodistubs/_autosummary/xbmcgui.html#xbmcgui.ListItem.setInfo
+            'title':        item.get('title'),
+            'album':        item.get('album'),
+            'artist':       item.get('artist'),
+            'tracknumber':  item.get('tracknumber'),
+            'year':         item.get('year'),
+            'genre':        item.get('genre'),
+            'size':         item.get('size'),
+            'duration':     item.get('duration'),
+            'date':         item.get('created')
+            }
+        }
+    }
+    
+    #context menu actions
+    context_actions = []
+
+    if can_star('track',item.get('id')):
+        action_star =  context_action_star('track',item.get('id'))
+        context_actions.append(action_star)
+
+    if can_download('track',item.get('id')):
+        action_download =  context_action_download('track',item.get('id'))
+        context_actions.append(action_download)
+
+    if len(context_actions) > 0:
+        entry['context_menu'] = context_actions
+    
+
+    return entry
+
+def get_starred_label(id,label):
+    if is_starred(id):
+        label = '[COLOR=FF00FF00]%s[/COLOR]' % label
+    return label
+
+def get_entry_track_label(item,hide_artist = False):
+    if hide_artist:
+        label = item.get('title', '<Unknown>')
+    else:
+        label = '%s - %s' % (
+            item.get('artist', '<Unknown>'),
+            item.get('title', '<Unknown>')
+        )
+
+    return get_starred_label(item.get('id'),label)
+
+def get_entry_album_label(item,hide_artist = False):
+    if hide_artist:
+        label = item.get('name', '<Unknown>')
+    else:
+        label = '%s - %s' % (item.get('artist', '<Unknown>'),
+                             item.get('name', '<Unknown>'))
+    return get_starred_label(item.get('id'),label)
+
+
+def get_sort_methods(type,params):
+    
+    #TO FIX
+    #actually it seems possible to 'restore' the default sorting (by labels)
+    #so our starred items don't get colorized.
+    #so do not sort stuff
+    return []
+
+    sortable = [
+        xbmcplugin.SORT_METHOD_NONE,
+        xbmcplugin.SORT_METHOD_LABEL,
+        xbmcplugin.SORT_METHOD_UNSORTED
+    ]
+    
+    if type is 'artists':
+        
+        artists = [
+            xbmcplugin.SORT_METHOD_ARTIST
+        ]
+
+        sortable = sortable + artists
+        
+    elif type is 'albums':
+        
+        albums = [
+            xbmcplugin.SORT_METHOD_ALBUM,
+            xbmcplugin.SORT_METHOD_DURATION,
+            xbmcplugin.SORT_METHOD_DATE,
+            #xbmcplugin.SORT_METHOD_YEAR
+        ]
+        
+        if not params.get('hide_artist',False):
+            albums.append(xbmcplugin.SORT_METHOD_ARTIST)
+
+        sortable = sortable + albums
+        
+    elif type is 'tracks':
+
+        tracks = [
+            xbmcplugin.SORT_METHOD_TITLE,
+            xbmcplugin.SORT_METHOD_ALBUM,
+            xbmcplugin.SORT_METHOD_TRACKNUM,
+            #xbmcplugin.SORT_METHOD_YEAR,
+            xbmcplugin.SORT_METHOD_GENRE,
+            xbmcplugin.SORT_METHOD_SIZE,
+            xbmcplugin.SORT_METHOD_DURATION,
+            xbmcplugin.SORT_METHOD_DATE,
+            xbmcplugin.SORT_METHOD_BITRATE
+        ]
+        
+        if not params.get('hide_artist',False):
+            tracks.append(xbmcplugin.SORT_METHOD_ARTIST)
+        
+        if params.get('playlist_id',False):
+            xbmcplugin.SORT_METHOD_PLAYLIST_ORDER,
+        
+        
+        sortable = sortable + tracks
+        
+    elif type is 'playlists':
+
+        playlists = [
+            xbmcplugin.SORT_METHOD_TITLE,
+            xbmcplugin.SORT_METHOD_DURATION,
+            xbmcplugin.SORT_METHOD_DATE
+        ]
+        
+        sortable = sortable + playlists
+
+    return sortable
+    
+
+def stars_cache_update(ids,remove=False):
+
+    #get existing cache set
+    starred = stars_cache_get()
+    
+    #make sure this is a list
+    if not isinstance(ids, list):
+        ids = [ids]
+    
+    #abord if empty
+    if len(ids) == 0:
+        return
+    
+    #parse items
+    for item_id in ids:
+        item_id = int(item_id)
+        if not remove:
+            starred.add(item_id)
+        else:
+            starred.remove(item_id)
+    
+    #store them
+    with plugin.get_storage() as storage:
+        storage['starred_ids'] = starred
+        
+    plugin.log('stars_cache_update:')
+    plugin.log(starred)
+
+
+def stars_cache_get():
+    with plugin.get_storage() as storage:
+        starred = storage.get('starred_ids',set())
+
+    plugin.log('stars_cache_get:')
+    plugin.log(starred)
+    return starred
+
+def is_starred(id):
+    starred = stars_cache_get()
+    id = int(id)
+    if id in starred:
+        return True
+    else:
+        return False
+
+def navigate_next(params):
+  
+    page =      int(params.get('page',1))
+    page +=     1
+    
+    title =  lang.getLocalizedString(30029) +"(%d)" % (page)
+
+    return {
+        'label':    title,
+        'url':      plugin.get_url(
+                        action=         params.get('action',None),
+                        page=           page,
+                        query_args=     params.get('query_args',None)
+                    )
+    }
+
+def navigate_root():
+    return {
+        'label':    lang.getLocalizedString(30030),
+        'url':      plugin.get_url(action='root')
+    }
+
+#converts a date string from eg. '2012-04-17T19:53:44' to eg. '17.04.2012'
+def convert_date_from_iso8601(iso8601):
+    date_obj = dateutil.parser.parse(iso8601)
+    return date_obj.strftime('%d.%m.%Y')
+
 def context_action_star(type,id):
     
     starred = is_starred(id)
@@ -1059,37 +1100,6 @@ def can_download(type,id = None):
         return True
     elif type == 'album':
         return True
-    
-@plugin.action()
-def download_item(params):
-
-    id=     params.get('id'); #can be single or lists of IDs
-    type=    params.get('type');
-    
-    #validate path
-    download_folder = Addon().get_setting('download_folder')
-    
-    if not download_folder:
-        popup("Please set a directory for your downloads")
-        plugin.log_error("No directory set for downloads")
-
-    #validate capability
-    if not can_download(type,id):
-        return;
-    
-    if type == 'track':
-        did_action = download_tracks(id)
-    elif type == 'album':
-        did_action = download_album(id)
-    
-    if did_action:
-        plugin.log('Downloaded %s #%s' % (type,id))
-        popup('Item has been downloaded!')
-        
-    else:
-        plugin.log_error('Unable to downloaded %s #%s' % (type,id))
-
-    return did_action
     
 def download_tracks(ids):
 

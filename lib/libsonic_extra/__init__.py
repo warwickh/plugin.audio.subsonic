@@ -375,6 +375,7 @@ class SubsonicClient(libsonic.Connection):
 
     def walk_genres(self):
         """
+        (ID3 tags)
         Request all genres and iterate over each item.
         """
 
@@ -385,6 +386,7 @@ class SubsonicClient(libsonic.Connection):
 
     def walk_albums(self, ltype, size=None, fromYear=None,toYear=None, genre=None, offset=None):
         """
+        (ID3 tags)
         Request all albums for a given genre and iterate over each album.
         """
         
@@ -406,6 +408,7 @@ class SubsonicClient(libsonic.Connection):
 
     def walk_album(self, album_id):
         """
+        (ID3 tags)
         Request an album and iterate over each item.
         """
 
