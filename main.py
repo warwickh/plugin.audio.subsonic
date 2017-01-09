@@ -82,7 +82,7 @@ def root(params):
 
     menus = {
         'folders': {
-            'name':     'Browse',
+            'name':     lang.getLocalizedString(30038),
             'callback': 'browse_folders',
             'thumb': None
         },
@@ -215,11 +215,11 @@ def menu_tracks(params):
 
     menus = {
         'tracks_starred': {
-            'name':             'Starred tracks',
+            'name':             lang.getLocalizedString(30036),
             'thumb':            None
         },
         'tracks_random': {
-            'name':             'Random tracks',
+            'name':             lang.getLocalizedString(30037),
             'thumb':            None
         }
     }

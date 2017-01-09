@@ -73,8 +73,8 @@ msgid "Allow self signed certificates"
 msgstr "Erlaube eigensignierte Zertifikate"
 
 msgctxt "#30017"
-msgid "Cache (in minutes) - not yet implemented"
-msgstr "Speicher (in Minuten) - noch nicht eingebaut"
+msgid "Cache (in minutes)"
+msgstr "Speicher (in Minuten)"
 
 msgctxt "#30018"
 msgid "Cache datas time"
@@ -140,3 +140,14 @@ msgctxt "#30035"
 msgid "Download"
 msgstr "Herunterladen"
 
+msgctxt "#30036"
+msgid "Starred tracks"
+msgstr "Lieblings lieder"
+
+msgctxt "#30037"
+msgid "Random tracks"
+msgstr "Zufällig lieder"
+
+msgctxt "#30038"
+msgid "Parcourir"
+msgstr "Durchsuchen"

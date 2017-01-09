@@ -73,8 +73,8 @@ msgid "Allow self signed certificates"
 msgstr "Autoriser les certificats auto-signés"
 
 msgctxt "#30017"
-msgid "Cache (in minutes) - not yet implemented"
-msgstr "Cache (en minutes) - pas encore implémenté"
+msgid "Cache (in minutes)"
+msgstr "Cache (en minutes)"
 
 msgctxt "#30018"
 msgid "Cache datas time"
@@ -139,3 +139,15 @@ msgstr "Retirer des favoris Subsonic"
 msgctxt "#30035"
 msgid "Download"
 msgstr "Télécharger"
+
+msgctxt "#30036"
+msgid "Starred tracks"
+msgstr "Pistes favorites"
+
+msgctxt "#30037"
+msgid "Random tracks"
+msgstr "Pistes au hasard"
+
+msgctxt "#30038"
+msgid "Parcourir"
+msgstr ""

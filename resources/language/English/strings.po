@@ -73,7 +73,7 @@ msgid "Allow self signed certificates"
 msgstr ""
 
 msgctxt "#30017"
-msgid "Cache (in minutes) - not yet implemented"
+msgid "Cache (in minutes)"
 msgstr ""
 
 msgctxt "#30018"
@@ -139,4 +139,16 @@ msgstr ""
 
 msgctxt "#30035"
 msgid "Download"
+msgstr ""
+
+msgctxt "#30036"
+msgid "Starred tracks"
+msgstr ""
+
+msgctxt "#30037"
+msgid "Random tracks"
+msgstr ""
+
+msgctxt "#30038"
+msgid "Browse"
 msgstr ""
