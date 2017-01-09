@@ -526,7 +526,6 @@ def list_tracks(params):
         #    items[item]['tracknumber'] = tracknumber
         
     # Starred
-    # Starred
     elif menu_id == 'tracks_starred':
         generator = connection.walk_tracks_starred()
         
@@ -571,12 +570,12 @@ def list_tracks(params):
 
     return plugin.create_listing(
         listing,
-        #succeeded = True, #if False Kodi won’t open a new listing and stays on the current level.
-        #update_listing = False, #if True, Kodi won’t open a sub-listing but refresh the current one. 
-        #cache_to_disk = True, #cache this view to disk.
-        sort_methods=get_sort_methods('tracks',params),
-        #view_mode = None, #a numeric code for a skin view mode. View mode codes are different in different skins except for 50 (basic listing).
-        content = 'songs' #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
+        #succeeded =        True, #if False Kodi won’t open a new listing and stays on the current level.
+        #update_listing =   False, #if True, Kodi won’t open a sub-listing but refresh the current one. 
+        #cache_to_disk =    True, #cache this view to disk.
+        sort_methods=       get_sort_methods('tracks',params),
+        #view_mode =        None, #a numeric code for a skin view mode. View mode codes are different in different skins except for 50 (basic listing).
+        content =           'songs' #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
     )
 
 #stars (persistent) cache is used to know what context action (star/unstar) we should display.
@@ -821,9 +820,6 @@ def get_entry_album(item, params):
 
     return entry
 
-#sort method for list types
-#https://github.com/xbmc/xbmc/blob/master/xbmc/SortFileItem.h
-#TO FIX _DATE or _DATEADDED ?
 def get_entry_track(item,params):
     
     menu_id = params.get('menu_id')
@@ -897,11 +893,15 @@ def get_entry_album_label(item,hide_artist = False):
 
 
 def get_sort_methods(type,params):
+    #sort method for list types
+    #https://github.com/xbmc/xbmc/blob/master/xbmc/SortFileItem.h
+    #TO FIX _DATE or _DATEADDED ?
     
     #TO FIX
     #actually it seems possible to 'restore' the default sorting (by labels)
     #so our starred items don't get colorized.
     #so do not sort stuff
+    #see http://forum.kodi.tv/showthread.php?tid=293037
     return []
 
     sortable = [
