@@ -149,5 +149,5 @@ msgid "Random tracks"
 msgstr "Pistes au hasard"
 
 msgctxt "#30038"
-msgid "Parcourir"
-msgstr ""
+msgid "Browse"
+msgstr "Parcourir"
