@@ -140,6 +140,7 @@ class SubsonicClient(libsonic.Connection):
 
     def getArtists(self, *args, **kwargs):
         """
+        (ID3 tags)
         Improve the getArtists method. Ensures IDs are integers.
         """
 
@@ -162,6 +163,7 @@ class SubsonicClient(libsonic.Connection):
 
     def getArtist(self, *args, **kwargs):
         """
+        (ID3 tags) 
         Improve the getArtist method. Ensures IDs are integers.
         """
 
@@ -209,6 +211,7 @@ class SubsonicClient(libsonic.Connection):
 
     def getAlbum(self, *args, **kwargs):
         """
+        (ID3 tags)
         Improve the getAlbum method. Ensures the IDs are real integers.
         """
 
@@ -296,24 +299,17 @@ class SubsonicClient(libsonic.Connection):
         else:
             return super(SubsonicClient, self)._doBinReq(*args, **kwargs)
 
-    def walk_index(self):
+    def walk_index(self, folder_id=None):
         """
         Request Subsonic's index and iterate each item.
         """
 
-        response = self.getIndexes()
+        response = self.getIndexes(folder_id)
 
         for index in response["indexes"]["index"]:
-            for index in index["artist"]:
-                for item in self.walk_directory(index["id"]):
-                    yield item
+            for artist in index["artist"]:
+                yield artist
 
-        for child in response["indexes"]["child"]:
-            if child.get("isDir"):
-                for child in self.walk_directory(child["id"]):
-                    yield child
-            else:
-                yield child
 
     def walk_playlists(self):
         """
@@ -333,6 +329,12 @@ class SubsonicClient(libsonic.Connection):
         response = self.getPlaylist(playlist_id)
 
         for child in response["playlist"]["entry"]:
+            yield child
+            
+    def walk_folders(self):
+        response = self.getMusicFolders()
+        
+        for child in response["musicFolders"]["musicFolder"]:
             yield child
 
     def walk_directory(self, directory_id):
@@ -361,6 +363,7 @@ class SubsonicClient(libsonic.Connection):
 
     def walk_artists(self):
         """
+        (ID3 tags)
         Request all artists and iterate over each item.
         """
 
@@ -372,6 +375,7 @@ class SubsonicClient(libsonic.Connection):
 
     def walk_genres(self):
         """
+        (ID3 tags)
         Request all genres and iterate over each item.
         """
 
@@ -382,6 +386,7 @@ class SubsonicClient(libsonic.Connection):
 
     def walk_albums(self, ltype, size=None, fromYear=None,toYear=None, genre=None, offset=None):
         """
+        (ID3 tags)
         Request all albums for a given genre and iterate over each album.
         """
         
@@ -403,7 +408,8 @@ class SubsonicClient(libsonic.Connection):
 
     def walk_album(self, album_id):
         """
-        Request an alum and iterate over each item.
+        (ID3 tags)
+        Request an album and iterate over each item.
         """
 
         response = self.getAlbum(album_id)

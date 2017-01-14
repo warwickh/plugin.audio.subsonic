@@ -46,7 +46,7 @@ msgstr "Télécharger"
 
 msgctxt "#30009"
 msgid "Download folder"
-msgstr "Télécharger le répertoire"
+msgstr "Répertoire de téléchargement"
 
 msgctxt "#30010"
 msgid "Streaming"
@@ -73,16 +73,16 @@ msgid "Allow self signed certificates"
 msgstr "Autoriser les certificats auto-signés"
 
 msgctxt "#30017"
-msgid "Cache (in minutes) - not yet implemented"
-msgstr "Cache (en minutes) - pas encore implémenté"
+msgid "Cache (in minutes)"
+msgstr "Cache (en minutes)"
 
 msgctxt "#30018"
 msgid "Cache datas time"
 msgstr "Durée du cache pour les données"
 
 msgctxt "#30019"
-msgid "Artists"
-msgstr "Artistes"
+msgid "Library"
+msgstr "Bibliothèque"
 
 msgctxt "#30020"
 msgid "Albums"
@@ -139,3 +139,15 @@ msgstr "Retirer des favoris Subsonic"
 msgctxt "#30035"
 msgid "Download"
 msgstr "Télécharger"
+
+msgctxt "#30036"
+msgid "Starred tracks"
+msgstr "Pistes favorites"
+
+msgctxt "#30037"
+msgid "Random tracks"
+msgstr "Pistes au hasard"
+
+msgctxt "#30038"
+msgid "Browse"
+msgstr "Parcourir"
