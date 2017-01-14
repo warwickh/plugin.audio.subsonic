@@ -1,7 +1,7 @@
 # Changelog
 
-## v2.0.X
-Released XXX
+## v2.0.6
+Released 14 January 2017
 * Upgrade to simpleplugin 2.1.0
 * Browse/Library menus (file structure vs ID3 tags)
 * Added multilanguage support

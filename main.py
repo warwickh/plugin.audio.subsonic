@@ -3,7 +3,7 @@
 
 # Module: main
 # Author: G.Breant
-# Created on: 04.10.2016
+# Created on: 14 January 2017
 # License: GPL v.3 https://www.gnu.org/copyleft/gpl.html
 
 import os
