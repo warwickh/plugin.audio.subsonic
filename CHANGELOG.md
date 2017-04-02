@@ -1,5 +1,10 @@
 # Changelog
 
+## v3.0.0
+* Forked from original repos
+* Added video support
+* Added Search
+
 ## v2.0.6
 Released 14 January 2017
 * Upgrade to simpleplugin 2.1.0
