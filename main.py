@@ -622,7 +622,7 @@ def list_playlists(params):
 def search(params):
 
     dialog = xbmcgui.Dialog()
-    d = dialog.input(Addon().get_localized_string(30039), type=xbmcgui.INPUT_ALPHANUM, option=xbmcgui.ALPHANUM_HIDE_INPUT)
+    d = dialog.input(Addon().get_localized_string(30039), type=xbmcgui.INPUT_ALPHANUM)
     if not d:
         d = " "
 
