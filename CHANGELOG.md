@@ -1,9 +1,8 @@
 # Changelog
 
-## v3.0.0
-* Forked from original repos
-* Added video support
-* Added Search
+## v2.0.7
+Released 18 April 2017
+* Added Search (by silascutler)
 
 ## v2.0.6
 Released 14 January 2017
