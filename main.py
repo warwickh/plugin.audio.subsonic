@@ -103,7 +103,12 @@ def root(params):
             'name':     Addon().get_localized_string(30022),
             'callback': 'list_playlists',
             'thumb': None
-        }
+        },
+        'search': {
+            'name':     Addon().get_localized_string(30039),
+            'callback': 'search',
+            'thumb': None
+        },  
     }
 
     # Iterate through categories
@@ -612,6 +617,38 @@ def list_playlists(params):
         #view_mode = None, #a numeric code for a skin view mode. View mode codes are different in different skins except for 50 (basic listing).
         #content = None #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
     )
+@plugin.action()
+#@plugin.cached(cachetime) #cache (in minutes)
+def search(params):
+
+    dialog = xbmcgui.Dialog()
+    d = dialog.input(Addon().get_localized_string(30039), type=xbmcgui.INPUT_ALPHANUM)
+    if not d:
+        d = " "
+
+
+    # get connection
+    connection = get_connection()
+
+    if connection is False:
+        return
+
+    listing = []
+
+    # Get items
+    items = connection.search2(query=d)
+    # Iterate through items
+    for item in items.get('searchResult2').get('song'):
+        entry = get_entry_track( item, params)
+        listing.append(entry)
+
+    if len(listing) == 1:
+        plugin.log('One single Media Folder found; do return listing from browse_indexes()...')
+        return browse_indexes(params)
+    else:
+        return plugin.create_listing(listing)
+
+
 
 @plugin.action()
 def play_track(params):
