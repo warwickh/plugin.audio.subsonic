@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.audio.subsonic" name="Subsonic" version="3.0.0" provider-name="BasilFX,grosbouff,silascutler">
+<addon id="plugin.audio.subsonic" name="Subsonic" version="2.0.7" provider-name="BasilFX,grosbouff,silascutler">
 <requires>
     <import addon="xbmc.python" version="2.14.0"/>
     <import addon="script.module.dateutil" version="2.4.2"/>
@@ -38,7 +38,7 @@
         <license>MIT</license>
         <forum></forum>
         <website>http://www.subsonic.org</website>
-	<source>https://github.com/silascutler/KodiSubsonic</source>
+	<source>https://github.com/gordielachance/plugin.audio.subsonic</source>
         <email></email>
     </extension>
 </addon>
