@@ -60,10 +60,11 @@ class SubsonicClient(libsonic.Connection):
         # Pick a default port
         host = "%s://%s" % (scheme, parts.hostname)
         port = parts.port or {"http": 80, "https": 443}[scheme]
+        path = parts.path.rstrip('/') + '/rest'
 
         # Invoke original constructor
         super(SubsonicClient, self).__init__(
-            host, username, password, port=port, appName='Kodi', apiVersion=apiversion, insecure=insecure, legacyAuth=legacyauth)
+            host, username, password, port=port, serverPath=path, appName='Kodi', apiVersion=apiversion, insecure=insecure, legacyAuth=legacyauth)
 
     def getIndexes(self, *args, **kwargs):
         """
