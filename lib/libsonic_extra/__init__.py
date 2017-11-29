@@ -60,10 +60,11 @@ class SubsonicClient(libsonic.Connection):
         # Pick a default port
         host = "%s://%s" % (scheme, parts.hostname)
         port = parts.port or {"http": 80, "https": 443}[scheme]
+        path = parts.path.rstrip('/') + '/rest'
 
         # Invoke original constructor
         super(SubsonicClient, self).__init__(
-            host, username, password, port=port, appName='Kodi', apiVersion=apiversion, insecure=insecure, legacyAuth=legacyauth)
+            host, username, password, port=port, serverPath=path, appName='Kodi', apiVersion=apiversion, insecure=insecure, legacyAuth=legacyauth)
 
     def getIndexes(self, *args, **kwargs):
         """
@@ -292,7 +293,8 @@ class SubsonicClient(libsonic.Connection):
             parts = list(urlparse.urlparse(
                 args[0].get_full_url() + "?" + args[0].data))
             parts[4] = dict(urlparse.parse_qsl(parts[4]))
-            parts[4].update({"u": self.username, "p": self.password})
+            if self._legacyAuth:
+                parts[4].update({"u": self.username, "p": 'enc:%s' % self._hexEnc(self._rawPass)})
             parts[4] = urllib.urlencode(parts[4])
 
             return urlparse.urlunparse(parts)

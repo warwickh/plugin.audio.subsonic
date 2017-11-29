@@ -51,8 +51,8 @@ def get_connection():
         try:
             connection = libsonic_extra.SubsonicClient(
                 Addon().get_setting('subsonic_url'),
-                Addon().get_setting('username'),
-                Addon().get_setting('password'),
+                Addon().get_setting('username', convert=False),
+                Addon().get_setting('password', convert=False),
                 Addon().get_setting('apiversion'),
                 Addon().get_setting('insecure') == 'true',
                 Addon().get_setting('legacyauth') == 'true',
