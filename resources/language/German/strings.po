@@ -153,6 +153,5 @@ msgid "Browse"
 msgstr "Durchsuchen"
 
 msgctxt "#30039"
-msgid "Suche"
-msgstr ""
-
+msgid "Search"
+msgstr "Suche"
