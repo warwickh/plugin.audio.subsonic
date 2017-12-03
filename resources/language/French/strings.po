@@ -154,7 +154,7 @@ msgstr "Parcourir"
 
 
 msgctxt "#30039"
-msgid "Chercher"
-msgstr ""
+msgid "Search"
+msgstr "Rechercher"
 
 
