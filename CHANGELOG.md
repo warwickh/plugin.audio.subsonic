@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.0.8
+Released 29th November 2017 (by Heruwar)
+* Fixes a security issue where the password is sent as plaintext in the URL query parameters when methods from libsonic_extas are used. 
+Also adds Subsonic hex encoding when using legacy auth.
+* Adds support for URL paths like https://hostname.com/subsonic as requested in Github issue #17 and also encountered in some of the reports (#14 and #5)
+* Fixes an error when the password only contains digits, which simpleplugin converts to a Long, which later fails when libsonic tries to salt the password expecting a string.
+
 ## v2.0.7
 Released 18 April 2017
 * Added Search (by silascutler)
