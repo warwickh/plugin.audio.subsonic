@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.audio.subsonic" name="Subsonic" version="2.0.8" provider-name="BasilFX,grosbouff,silascutler,Heruwar">
+<addon id="plugin.audio.subsonic" name="Subsonic" version="2.1.0" provider-name="BasilFX,grosbouff,silascutler,Heruwar,warwickh">
 <requires>
-    <import addon="xbmc.python" version="2.14.0"/>
+    <import addon="xbmc.python" version="3.0.0"/>
     <import addon="script.module.dateutil" version="2.4.2"/>
 </requires>
 <extension point="xbmc.python.pluginsource" library="main.py">
@@ -32,6 +32,10 @@
             Beihilfe ist Willkommen:
             https://github.com/gordielachance/plugin.audio.subsonic
         </description>
+        <assets>
+            <icon>icon.png</icon>
+            <fanart>icon.jpg</fanart>
+        </assets>
         <disclaimer lang="en"></disclaimer>
         <language>multi</language>
         <platform>all</platform>
