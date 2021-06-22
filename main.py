@@ -21,7 +21,7 @@ from collections import MutableMapping, namedtuple
 sys.path.append(xbmcvfs.translatePath(os.path.join(xbmcaddon.Addon("plugin.audio.subsonic").getAddonInfo("path"), "lib")))
 
 
-import libsonic#Removed libsonic_extra
+import libsonic#_extra #TO FIX - we should get rid of this and use only libsonic
 
 from simpleplugin import Plugin
 from simpleplugin import Addon
@@ -46,19 +46,22 @@ def popup(text, time=5000, image=None):
 def get_connection():
     global connection
     
-    if connection==None:   
-        connected = False  
+    if connection==None:
+        
+        connected = False
+        
         # Create connection
+
         try:
             connection = libsonic.Connection(
                 baseUrl=Addon().get_setting('subsonic_url'),
                 username=Addon().get_setting('username', convert=False),
                 password=Addon().get_setting('password', convert=False),
-                port=4040,#TO FIX
+                port=4040,
                 apiVersion=Addon().get_setting('apiversion'),
                 insecure=Addon().get_setting('insecure') == 'true',
                 legacyAuth=Addon().get_setting('legacyauth') == 'true',
-                useGET=True,#Addon().get_setting('useget') == 'True', #TO FIX
+                useGET=True,#Addon().get_setting('useget') == 'True',
             )
             connected = connection.ping()
         except:
@@ -1293,7 +1296,6 @@ def resolve_url(path='', play_item=None, succeeded=True):
 def create_list_item(item):
     """
     Create an :class:`xbmcgui.ListItem` instance from an item dict
-
     :param item: a dict of ListItem properties
     :type item: dict
     :return: ListItem instance
@@ -1305,30 +1307,23 @@ def create_list_item(item):
                                      label2=item.get('label2', ''),
                                      path=item.get('path', ''),
                                      offscreen=item.get('offscreen', False))
-    else:
-        list_item = xbmcgui.ListItem(label=item.get('label', ''),
-                                     label2=item.get('label2', ''),
-                                     path=item.get('path', ''))
-    if major_version >= '16':
-        art = item.get('art', {})
-        art['thumb'] = item.get('thumb', '')
-        art['icon'] = item.get('icon', '')
-        art['fanart'] = item.get('fanart', '')
-        item['art'] = art
-        cont_look = item.get('content_lookup')
-        if cont_look is not None:
-            list_item.setContentLookup(cont_look)
-    else:
-        list_item.setThumbnailImage(item.get('thumb', ''))
-        list_item.setIconImage(item.get('icon', ''))
-        list_item.setProperty('fanart_image', item.get('fanart', ''))
+
+
+    art = item.get('art', {})
+    art['thumb'] = item.get('thumb', '')
+    art['icon'] = item.get('icon', '')
+    art['fanart'] = item.get('fanart', '')
+    item['art'] = art
+    cont_look = item.get('content_lookup')
+    if cont_look is not None:
+        list_item.setContentLookup(cont_look)
     if item.get('art'):
         list_item.setArt(item['art'])
     if item.get('stream_info'):
-        for stream, stream_info in item['stream_info'].iteritems():
+        for stream, stream_info in item['stream_info'].items():
             list_item.addStreamInfo(stream, stream_info)
     if item.get('info'):
-        for media, info in item['info'].iteritems():
+        for media, info in item['info'].items():
             list_item.setInfo(media, info)
     if item.get('context_menu') is not None:
         list_item.addContextMenuItems(item['context_menu'])
@@ -1337,7 +1332,7 @@ def create_list_item(item):
     if item.get('mime'):
         list_item.setMimeType(item['mime'])
     if item.get('properties'):
-        for key, value in item['properties'].iteritems():
+        for key, value in item['properties'].items():
             list_item.setProperty(key, value)
     if major_version >= '17':
         cast = item.get('cast')
@@ -1403,6 +1398,17 @@ def add_directory_items(context):
         if context.view_mode is not None:
             xbmc.executebuiltin('Container.SetViewMode({0})'.format(context.view_mode))
 
+def walk_index(folder_id=None):
+    """
+    Request Subsonic's index and iterate each item.
+    """
+
+    response = connection.getIndexes(folder_id)
+
+    for index in response["indexes"]["index"]:
+        for artist in index["artist"]:
+            yield artist
+            
 def walk_playlists():
         """
         Request Subsonic's playlists and iterate over each item.
@@ -1421,6 +1427,26 @@ def walk_playlist(playlist_id):
         response = connection.getPlaylist(playlist_id)
 
         for child in response["playlist"]["entry"]:
+            yield child
+
+def walk_folders():
+    response = connection.getMusicFolders()
+    
+    for child in response["musicFolders"]["musicFolder"]:
+        yield child
+
+def walk_directory(directory_id):
+    """
+    Request a Subsonic music directory and iterate over each item.
+    """
+
+    response = connection.getMusicDirectory(directory_id)
+
+    for child in response["directory"]["child"]:
+        if child.get("isDir"):
+            for child in walk_directory(child["id"]):
+                yield child
+        else:
             yield child
 
 def walk_artist(artist_id):
