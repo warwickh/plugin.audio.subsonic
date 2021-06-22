@@ -21,7 +21,7 @@ from collections import MutableMapping, namedtuple
 sys.path.append(xbmcvfs.translatePath(os.path.join(xbmcaddon.Addon("plugin.audio.subsonic").getAddonInfo("path"), "lib")))
 
 
-import libsonic#_extra #TO FIX - we should get rid of this and use only libsonic
+import libsonic#Removed libsonic_extra
 
 from simpleplugin import Plugin
 from simpleplugin import Addon
@@ -46,22 +46,19 @@ def popup(text, time=5000, image=None):
 def get_connection():
     global connection
     
-    if connection==None:
-        
-        connected = False
-        
+    if connection==None:   
+        connected = False  
         # Create connection
-
         try:
             connection = libsonic.Connection(
                 baseUrl=Addon().get_setting('subsonic_url'),
                 username=Addon().get_setting('username', convert=False),
                 password=Addon().get_setting('password', convert=False),
-                port=4040,
+                port=4040,#TO FIX
                 apiVersion=Addon().get_setting('apiversion'),
                 insecure=Addon().get_setting('insecure') == 'true',
                 legacyAuth=Addon().get_setting('legacyauth') == 'true',
-                useGET=True,#Addon().get_setting('useget') == 'True',
+                useGET=True,#Addon().get_setting('useget') == 'True', #TO FIX
             )
             connected = connection.ping()
         except:
