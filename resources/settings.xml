@@ -22,7 +22,7 @@
         <setting label="30001" type="lsep" />
         <setting label="30014" id="apiversion" type="labelenum"  values="1.11.0|1.12.0|1.13.0|1.14.0|1.15.0" default="1.15.0"/>
 		<setting label="30016" id="insecure" type="bool"  default="false" />
-		<setting label="30040" id="useget" type="bool"  default="true" />
+		<setting label="30040" id="useget" type="bool"  default="false" />
 		<setting label="30041" id="legacyauth" type="bool" default="false" />
         <setting label="30017" type="lsep" />
         <setting label="30018" id="cachetime" type="labelenum"  default="15" values="1|5|15|30|60|120|180|720|1440"/>
