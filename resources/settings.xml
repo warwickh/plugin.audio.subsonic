@@ -20,7 +20,7 @@
     <!-- ADVANCED -->
   	<category label="30013">
         <setting label="30001" type="lsep" />
-        <setting label="30014" id="apiversion" type="labelenum"  values="1.11.0|1.12.0|1.13.0|1.14.0|1.15.0|1.16.0" default="1.16.0"/>
+        <setting label="30014" id="apiversion" type="labelenum"  values="1.11.0|1.12.0|1.13.0|1.14.0|1.15.0|1.16.0" default="1.15.0"/>
 		<setting label="30016" id="insecure" type="bool"  default="false" />
 		<setting label="30040" id="useget" type="bool"  default="false" />
 		<setting label="30041" id="legacyauth" type="bool" default="false" />
