@@ -1,9 +1,9 @@
 # Subsonic
 Kodi plugin to stream, star and download music from Subsonic.
 For feature requests / issues:
-https://github.com/gordielachance/plugin.audio.subsonic/issues
+https://github.com/warwickh/plugin.audio.subsonic/issues
 Contributions are welcome:
-https://github.com/gordielachance/plugin.audio.subsonic
+https://github.com/warwickh/plugin.audio.subsonic
 
 Updated to support Kodi 19 Matrix
 
@@ -14,7 +14,7 @@ Updated to support Kodi 19 Matrix
 
 ## Installation
 * Navigate to your `.kodi/addons/` folder
-* Clone this repository: `git clone https://github.com/gordielachance/plugin.audio.subsonic.git`
+* Clone this repository: `git clone https://github.com/warwickh/plugin.audio.subsonic.git`
 * (Re)start Kodi.
 
 ## TODO
@@ -26,6 +26,7 @@ Updated to support Kodi 19 Matrix
 See the `LICENSE` file.
 
 Additional copyright notices:
+* [Previous version of this plugin](https://github.com/gordielachance/plugin.audio.subsonic) by gordielachance
 * [Previous version of this plugin](https://github.com/basilfx/plugin.audio.subsonic) by basilfx
 * [SimplePlugin](https://github.com/romanvm/script.module.simpleplugin/stargazers) by romanvm
 * The original [SubKodi](https://github.com/DarkAllMan/SubKodi) plugin
