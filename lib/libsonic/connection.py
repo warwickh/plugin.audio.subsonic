@@ -230,8 +230,6 @@ class Connection(object):
         viewName = '%s.view' % methodName
 
         req = self._getRequest(viewName)
-        #res = self._doInfoReq(req)
-        #xbmc.log(res,xbmc.LOGINFO)
         try:
             res = self._doInfoReq(req)
         except:
@@ -920,7 +918,6 @@ class Connection(object):
         q = self._getQueryDict({'id': aid, 'size': size})
 
         req = self._getRequest(viewName, q)
-        xbmc.log("Is this what I need? %s"%str(req.full_url),xbmc.LOGINFO)
         res = self._doBinReq(req)
         if isinstance(res, dict):
             self._checkStatus(res)
@@ -944,7 +941,6 @@ class Connection(object):
         q = self._getQueryDict({'id': aid, 'size': size})
 
         req = self._getRequest(viewName, q)
-        xbmc.log("Is this what I need? %s"%str(req.full_url),xbmc.LOGINFO)
         res = self._doBinReq(req)
         if isinstance(res, dict):
             self._checkStatus(res)
@@ -2800,13 +2796,10 @@ class Connection(object):
         qdict.update(query)
         url = '%s:%d/%s/%s' % (self._baseUrl, self._port, self._serverPath,
             viewName)
-        xbmc.log("Standard URL %s"%url,level=xbmc.LOGINFO)
-        xbmc.log("Qdict %s"%str(qdict),level=xbmc.LOGINFO)
         req = urllib.request.Request(url, urlencode(qdict).encode('utf-8'))
 
         if self._useGET:
             url += '?%s' % urlencode(qdict)
-            xbmc.log("UseGET URL %s"%(url),xbmc.LOGINFO)
             req = urllib.request.Request(url)
         return req
 
@@ -2862,7 +2855,6 @@ class Connection(object):
         # Returns a parsed dictionary version of the result
         res = self._opener.open(req)
         dres = json.loads(res.read().decode('utf-8'))
-        xbmc.log("ddres %s"%(str(dres)),xbmc.LOGINFO)
         return dres['subsonic-response']
 
     def _doBinReq(self, req):
