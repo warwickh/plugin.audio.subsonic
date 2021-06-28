@@ -34,6 +34,7 @@ plugin = Plugin()
 
 connection = None
 cachetime = int(Addon().get_setting('cachetime'))
+local_starred = set({})
 
 ListContext = namedtuple('ListContext', ['listing', 'succeeded','update_listing', 'cache_to_disk','sort_methods', 'view_mode','content', 'category'])
 PlayContext = namedtuple('PlayContext', ['path', 'play_item', 'succeeded'])
@@ -56,9 +57,9 @@ def get_connection():
                 password=Addon().get_setting('password', convert=False),
                 port=4040,#TO FIX
                 apiVersion=Addon().get_setting('apiversion'),
-                insecure=Addon().get_setting('insecure') == 'true',
-                legacyAuth=Addon().get_setting('legacyauth') == 'true',
-                useGET=True,#Addon().get_setting('useget') == 'True', #TO FIX
+                insecure=Addon().get_setting('insecure') == 'false',
+                legacyAuth=Addon().get_setting('legacyauth') == 'false',
+                useGET=False,#Addon().get_setting('useget') == 'True', #TO FIX
             )
             connected = connection.ping()
         except:
@@ -339,7 +340,7 @@ def list_directory(params):
     # Get items
     id = params.get('id')
     items = walk_directory(id)
-    
+
     # Iterate through items
     for item in items:
         
@@ -675,7 +676,7 @@ def play_track(params):
 
 @plugin.action()
 def star_item(params):
-
+    plugin.log("Star/Unstar params %s"%params,xbmc.LOGINFO)
     ids=     params.get('ids'); #can be single or lists of IDs
     unstar=  params.get('unstar',False);
     unstar = (unstar) and (unstar != 'None') and (unstar != 'False') #TO FIX better statement ?
@@ -713,15 +714,13 @@ def star_item(params):
             request = connection.unstar(sids, albumIds, artistIds)
         else:
             request = connection.star(sids, albumIds, artistIds)
-
+        xbmc.log("star resp: %s"%request)
         if request['status'] == 'ok':
             did_action = True
 
     except:
         pass
 
-    ###
-    
     if did_action:
         
         if unstar:
@@ -744,8 +743,8 @@ def star_item(params):
         else:
             plugin.log_error('Unable to star %s #%s' % (type,json.dumps(ids)))
 
-    return did_action
-        
+    #return did_action
+    return    
 
         
 @plugin.action()
@@ -779,7 +778,7 @@ def download_item(params):
 
     return did_action
 
-@plugin.cached(cachetime) #cache (in minutes)    
+#@plugin.cached(cachetime) #cache (in minutes)    
 def get_entry_playlist(item,params):
     image = connection.getCoverArtUrl(item.get('coverArt'))
     return {
@@ -801,7 +800,7 @@ def get_entry_playlist(item,params):
     }
 
 #star (or unstar) an item
-@plugin.cached(cachetime) #cache (in minutes)
+#@plugin.cached(cachetime) #cache (in minutes)
 def get_entry_artist(item,params):
     image = connection.getCoverArtUrl(item.get('coverArt'))
     return {
@@ -821,7 +820,7 @@ def get_entry_artist(item,params):
         }
     }
 
-@plugin.cached(cachetime) #cache (in minutes)
+#@plugin.cached(cachetime) #cache (in minutes)
 def get_entry_album(item, params):
     
     image = connection.getCoverArtUrl(item.get('coverArt'))
@@ -864,7 +863,7 @@ def get_entry_album(item, params):
 
     return entry
 
-@plugin.cached(cachetime) #cache (in minutes)
+#@plugin.cached(cachetime) #cache (in minutes)
 def get_entry_track(item,params):
     
     menu_id = params.get('menu_id')
@@ -912,13 +911,21 @@ def get_entry_track(item,params):
 
     return entry
 
-@plugin.cached(cachetime) #cache (in minutes)
+#@plugin.cached(cachetime) #cache (in minutes)
 def get_starred_label(id,label):
     if is_starred(id):
         label = '[COLOR=FF00FF00]%s[/COLOR]' % label
     return label
 
-@plugin.cached(cachetime) #cache (in minutes)
+def is_starred(id):
+    starred = stars_cache_get()
+    id = int(id)
+    if id in starred:
+        return True
+    else:
+        return False
+
+#@plugin.cached(cachetime) #cache (in minutes)
 def get_entry_track_label(item,hide_artist = False):
     if hide_artist:
         label = item.get('title', '<Unknown>')
@@ -930,7 +937,7 @@ def get_entry_track_label(item,hide_artist = False):
 
     return get_starred_label(item.get('id'),label)
 
-@plugin.cached(cachetime) #cache (in minutes)
+#@plugin.cached(cachetime) #cache (in minutes)
 def get_entry_album_label(item,hide_artist = False):
     if hide_artist:
         label = item.get('name', '<Unknown>')
@@ -1046,20 +1053,18 @@ def stars_cache_update(ids,remove=False):
 
 
 def stars_cache_get():
-    with plugin.get_storage() as storage:
-        starred = storage.get('starred_ids',set())
-
-    plugin.log('stars_cache_get:')
-    plugin.log(starred)
-    return starred
-
-def is_starred(id):
-    starred = stars_cache_get()
-    id = int(id)
-    if id in starred:
-        return True
+    global local_starred    
+    plugin.log(len(local_starred))   
+    if(len(local_starred)>0):
+        plugin.log('stars already loaded:')
+        plugin.log(local_starred)        
+        return(local_starred)
     else:
-        return False
+        with plugin.get_storage() as storage:
+            local_starred = storage.get('starred_ids',set())
+            plugin.log('stars_cache_get:')
+            plugin.log(local_starred)
+            return local_starred
 
 def navigate_next(params):
   
@@ -1104,9 +1109,10 @@ def context_action_star(type,id):
 
         label = Addon().get_localized_string(30034)
     
+    xbmc.log('Context action star returning RunPlugin(%s)' % plugin.get_url(action='star_item',type=type,ids=id,unstar=starred),xbmc.LOGINFO)
     return (
         label, 
-        'XBMC.RunPlugin(%s)' % plugin.get_url(action='star_item',type=type,ids=id,unstar=starred)
+        'RunPlugin(%s)' % plugin.get_url(action='star_item',type=type,ids=id,unstar=starred)
     )
 
 #Subsonic API says this==supported for artist,tracks and albums,
@@ -1135,7 +1141,7 @@ def context_action_download(type,id):
     
     return (
         label, 
-        'XBMC.RunPlugin(%s)' % plugin.get_url(action='download_item',type=type,id=id)
+        'RunPlugin(%s)' % plugin.get_url(action='download_item',type=type,id=id)
     )
 
 def can_download(type,id = None):
@@ -1266,7 +1272,7 @@ def download_album(id):
 
     download_tracks(ids)
 
-@plugin.cached(cachetime) #cache (in minutes)
+#@plugin.cached(cachetime) #cache (in minutes)
 def create_listing(listing, succeeded=True, update_listing=False, cache_to_disk=False, sort_methods=None,view_mode=None, content=None, category=None):
         return ListContext(listing, succeeded, update_listing, cache_to_disk,sort_methods, view_mode, content, category)
 
@@ -1436,15 +1442,19 @@ def walk_directory(directory_id):
     """
     Request a Subsonic music directory and iterate over each item.
     """
-
+    #directory_id = 16906
     response = connection.getMusicDirectory(directory_id)
-
-    for child in response["directory"]["child"]:
-        if child.get("isDir"):
-            for child in walk_directory(child["id"]):
+    xbmc.log(directory_id,xbmc.LOGINFO)
+    #xbmc.log(str(response),xbmc.LOGINFO)
+    try:
+        for child in response["directory"]["child"]:
+            if child.get("isDir"):
+                for child in walk_directory(child["id"]):
+                    yield child
+            else:
                 yield child
-        else:
-            yield child
+    except:
+        yield from ()
 
 def walk_artist(artist_id):
     """
