@@ -4,7 +4,7 @@
     <category label="30000">
         <setting label="30001" type="lsep" />
         <setting label="30002" id="subsonic_url" type="text"  default="http://demo.subsonic.org"/>
-        <setting label="30042" id="port" type="labelenum"  default="4040"/>
+        <setting label="30042" id="port" type="text"  default="80"/>
         <setting label="30003" id="username" type="text" default="guest3"/>
         <setting label="30004" id="password" type="text" option="hidden"  default="guest"/>
         <setting label="30005" type="lsep" />
