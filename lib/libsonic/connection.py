@@ -894,6 +894,7 @@ class Connection(object):
             'converted': converted})
 
         req = self._getRequest(viewName, q)
+        xbmc.log("Requesting %s"%str(req.full_url),xbmc.LOGINFO)
         res = self._doBinReq(req)
         if isinstance(res, dict):
             self._checkStatus(res)
@@ -2796,10 +2797,13 @@ class Connection(object):
         qdict.update(query)
         url = '%s:%d/%s/%s' % (self._baseUrl, self._port, self._serverPath,
             viewName)
+        xbmc.log("Standard URL %s"%url,level=xbmc.LOGINFO)
+        xbmc.log("Qdict %s"%str(qdict),level=xbmc.LOGINFO)
         req = urllib.request.Request(url, urlencode(qdict).encode('utf-8'))
 
         if self._useGET:
             url += '?%s' % urlencode(qdict)
+            xbmc.log("UseGET URL %s"%(url),xbmc.LOGINFO)
             req = urllib.request.Request(url)
         return req
 
