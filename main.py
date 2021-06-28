@@ -49,18 +49,18 @@ def get_connection():
     
     if connection==None:   
         connected = False  
-        # Create connection
+        # Create connection      
         try:
             connection = libsonic.Connection(
                 baseUrl=Addon().get_setting('subsonic_url'),
                 username=Addon().get_setting('username', convert=False),
                 password=Addon().get_setting('password', convert=False),
-                port=4040,#TO FIX
+                port=Addon().get_setting('port'),
                 apiVersion=Addon().get_setting('apiversion'),
-                insecure=Addon().get_setting('insecure') == 'false',
-                legacyAuth=Addon().get_setting('legacyauth') == 'false',
-                useGET=False,#Addon().get_setting('useget') == 'True', #TO FIX
-            )
+                insecure=Addon().get_setting('insecure'),
+                legacyAuth=Addon().get_setting('legacyauth'),
+                useGET=Addon().get_setting('useget'),
+            )            
             connected = connection.ping()
         except:
             pass
@@ -676,7 +676,6 @@ def play_track(params):
 
 @plugin.action()
 def star_item(params):
-    plugin.log("Star/Unstar params %s"%params,xbmc.LOGINFO)
     ids=     params.get('ids'); #can be single or lists of IDs
     unstar=  params.get('unstar',False);
     unstar = (unstar) and (unstar != 'None') and (unstar != 'False') #TO FIX better statement ?
@@ -714,7 +713,6 @@ def star_item(params):
             request = connection.unstar(sids, albumIds, artistIds)
         else:
             request = connection.star(sids, albumIds, artistIds)
-        xbmc.log("star resp: %s"%request)
         if request['status'] == 'ok':
             did_action = True
 
@@ -1052,7 +1050,7 @@ def stars_cache_update(ids,remove=False):
     plugin.log(starred)
 
 
-def stars_cache_get():
+def stars_cache_get(): #Retrieving stars from cache is too slow, so load to local variable
     global local_starred    
     plugin.log(len(local_starred))   
     if(len(local_starred)>0):
