@@ -5,6 +5,8 @@ https://github.com/gordielachance/plugin.audio.subsonic/issues
 Contributions are welcome:
 https://github.com/gordielachance/plugin.audio.subsonic
 
+Updated to support Kodi 19 Matrix
+
 ## Features
 * Browse by artist, albums (newest/most played/recently played/random), tracks (starred/random), and playlists
 * Download songs
