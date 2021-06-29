@@ -1276,22 +1276,22 @@ def create_listing(listing, succeeded=True, update_listing=False, cache_to_disk=
 
 
 def resolve_url(path='', play_item=None, succeeded=True):
-        """
-        Create and return a context dict to resolve a playable URL
-        :param path: the path to a playable media.
-        :type path: str or unicode
-        :param play_item: a dict of item properties as described in the class docstring.
-            It allows to set additional properties for the item being played, like graphics, metadata etc.
-            if ``play_item`` parameter==present, then ``path`` value==ignored, and the path must be set via
-            ``'path'`` property of a ``play_item`` dict.
-        :type play_item: dict
-        :param succeeded: if ``False``, Kodi won't play anything
-        :type succeeded: bool
-        :return: context object containing necessary parameters
-            for Kodi to play the selected media.
-        :rtype: PlayContext
-        """
-        return PlayContext(path, play_item, succeeded)
+    """
+    Create and return a context dict to resolve a playable URL
+    :param path: the path to a playable media.
+    :type path: str or unicode
+    :param play_item: a dict of item properties as described in the class docstring.
+        It allows to set additional properties for the item being played, like graphics, metadata etc.
+        if ``play_item`` parameter==present, then ``path`` value==ignored, and the path must be set via
+        ``'path'`` property of a ``play_item`` dict.
+    :type play_item: dict
+    :param succeeded: if ``False``, Kodi won't play anything
+    :type succeeded: bool
+    :return: context object containing necessary parameters
+        for Kodi to play the selected media.
+    :rtype: PlayContext
+    """
+    return PlayContext(path, play_item, succeeded)
 
 #@plugin.cached(cachetime) #cache (in minutes)
 def create_list_item(item):
@@ -1360,44 +1360,44 @@ def _set_resolved_url(context):
 
 #@plugin.cached(cachetime) #cache (in minutes)
 def add_directory_items(context):
-        plugin.log_debug('Creating listing from {0}'.format(str(context)))
-        if context.category is not None:
-            xbmcplugin.setPluginCategory(plugin.handle, context.category)
-        if context.content is not None:
-            xbmcplugin.setContent(plugin.handle, context.content)  # This must be at the beginning
-        for item in context.listing:
-            is_folder = item.get('is_folder', True)
-            if item.get('list_item') is not None:
-                list_item = item['list_item']
-            else:
-                list_item = create_list_item(item)
-                if item.get('is_playable'):
-                    list_item.setProperty('IsPlayable', 'true')
-                    is_folder = False
-            xbmcplugin.addDirectoryItem(plugin.handle, item['url'], list_item, is_folder)
-        if context.sort_methods is not None:
-            if isinstance(context.sort_methods, (int, dict)):
-                sort_methods = [context.sort_methods]
-            elif isinstance(context.sort_methods, (tuple, list)):
-                sort_methods = context.sort_methods
+    plugin.log_debug('Creating listing from {0}'.format(str(context)))
+    if context.category is not None:
+        xbmcplugin.setPluginCategory(plugin.handle, context.category)
+    if context.content is not None:
+        xbmcplugin.setContent(plugin.handle, context.content)  # This must be at the beginning
+    for item in context.listing:
+        is_folder = item.get('is_folder', True)
+        if item.get('list_item') is not None:
+            list_item = item['list_item']
+        else:
+            list_item = create_list_item(item)
+            if item.get('is_playable'):
+                list_item.setProperty('IsPlayable', 'true')
+                is_folder = False
+        xbmcplugin.addDirectoryItem(plugin.handle, item['url'], list_item, is_folder)
+    if context.sort_methods is not None:
+        if isinstance(context.sort_methods, (int, dict)):
+            sort_methods = [context.sort_methods]
+        elif isinstance(context.sort_methods, (tuple, list)):
+            sort_methods = context.sort_methods
+        else:
+            raise TypeError(
+                'sort_methods parameter must be of int, dict, tuple or list type!')
+        for method in sort_methods:
+            if isinstance(method, int):
+                xbmcplugin.addSortMethod(plugin.handle, method)
+            elif isinstance(method, dict):
+                xbmcplugin.addSortMethod(plugin.handle, **method)
             else:
                 raise TypeError(
-                    'sort_methods parameter must be of int, dict, tuple or list type!')
-            for method in sort_methods:
-                if isinstance(method, int):
-                    xbmcplugin.addSortMethod(plugin.handle, method)
-                elif isinstance(method, dict):
-                    xbmcplugin.addSortMethod(plugin.handle, **method)
-                else:
-                    raise TypeError(
-                        'method parameter must be of int or dict type!')
-                    
-        xbmcplugin.endOfDirectory(plugin.handle,
-                                  context.succeeded,
-                                  context.update_listing,
-                                  context.cache_to_disk)
-        if context.view_mode is not None:
-            xbmc.executebuiltin('Container.SetViewMode({0})'.format(context.view_mode))
+                    'method parameter must be of int or dict type!')
+
+    xbmcplugin.endOfDirectory(plugin.handle,
+                              context.succeeded,
+                              context.update_listing,
+                              context.cache_to_disk)
+    if context.view_mode is not None:
+        xbmc.executebuiltin('Container.SetViewMode({0})'.format(context.view_mode))
 
 def walk_index(folder_id=None):
     """
@@ -1411,24 +1411,24 @@ def walk_index(folder_id=None):
             yield artist
             
 def walk_playlists():
-        """
-        Request Subsonic's playlists and iterate over each item.
-        """
+    """
+    Request Subsonic's playlists and iterate over each item.
+    """
 
-        response = connection.getPlaylists()
+    response = connection.getPlaylists()
 
-        for child in response["playlists"]["playlist"]:
-            yield child
+    for child in response["playlists"]["playlist"]:
+        yield child
 
 
 def walk_playlist(playlist_id):
-        """
-        Request Subsonic's playlist items and iterate over each item.
-        """
-        response = connection.getPlaylist(playlist_id)
+    """
+    Request Subsonic's playlist items and iterate over each item.
+    """
+    response = connection.getPlaylist(playlist_id)
 
-        for child in response["playlist"]["entry"]:
-            yield child
+    for child in response["playlist"]["entry"]:
+        yield child
 
 def walk_folders():
     response = connection.getMusicFolders()
@@ -1440,10 +1440,8 @@ def walk_directory(directory_id):
     """
     Request a Subsonic music directory and iterate over each item.
     """
-    #directory_id = 16906
     response = connection.getMusicDirectory(directory_id)
-    xbmc.log(directory_id,xbmc.LOGINFO)
-    #xbmc.log(str(response),xbmc.LOGINFO)
+    
     try:
         for child in response["directory"]["child"]:
             if child.get("isDir"):
@@ -1548,13 +1546,3 @@ if __name__ == "__main__":
     # Map actions
     # Note that we map callable objects without brackets ()
     plugin.run()
-
-
-
-
-
-    
-    
-    
-    
-    
