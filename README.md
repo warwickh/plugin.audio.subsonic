@@ -17,11 +17,14 @@ Leia compatible version available in alternate branch
 ## Installation
 * Click the code button and download
 * Enable unknown sources and install from zip in Kodi
+
 or
+
 * Navigate to your `.kodi/addons/` folder
 * Clone this repository: `git clone https://github.com/warwickh/plugin.audio.subsonic.git`
 * (Re)start Kodi.
-* Note: You may need to install dependencies manually if installing this way
+
+Note: You may need to install dependencies manually if installing this way
 
 ## TODO
 * Scrobble to Last.FM (http://forum.kodi.tv/showthread.php?tid=195597&pid=2429362#pid2429362)
