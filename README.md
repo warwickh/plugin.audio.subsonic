@@ -28,6 +28,6 @@ See the `LICENSE` file.
 Additional copyright notices:
 * [Previous version of this plugin](https://github.com/gordielachance/plugin.audio.subsonic) by gordielachance
 * [Previous version of this plugin](https://github.com/basilfx/plugin.audio.subsonic) by basilfx
-* [SimplePlugin](https://github.com/romanvm/script.module.simpleplugin/stargazers) by romanvm
+* [SimplePlugin](https://github.com/romanvm/script.module.simpleplugin/stargazers) by romanvm now at [SimplePlugin3](https://github.com/vlmaksime/script.module.simpleplugin)
 * The original [SubKodi](https://github.com/DarkAllMan/SubKodi) plugin
 * [`py-sonic`](https://github.com/crustymonkey/py-sonic) Python module
