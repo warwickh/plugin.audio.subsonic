@@ -6,6 +6,7 @@ Contributions are welcome:
 https://github.com/warwickh/plugin.audio.subsonic
 
 Master branch updated to support Kodi 19 Matrix
+
 Leia compatible version available in alternate branch
 
 ## Features
