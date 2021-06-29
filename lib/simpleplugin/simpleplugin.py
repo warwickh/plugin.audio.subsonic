@@ -481,7 +481,6 @@ class Addon(object):
         icon = os.path.join(self.path, self._addon.getAddonInfo('icon'))
         if not icon:
             icon = os.path.join(self.path, 'icon.png')
-        xbmc.log(icon,xbmc.LOGINFO)        
         if os.path.exists(icon):
             return icon
         else:

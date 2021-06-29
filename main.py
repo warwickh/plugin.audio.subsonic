@@ -1107,7 +1107,7 @@ def context_action_star(type,id):
 
         label = Addon().get_localized_string(30034)
     
-    xbmc.log('Context action star returning RunPlugin(%s)' % plugin.get_url(action='star_item',type=type,ids=id,unstar=starred),xbmc.LOGINFO)
+    xbmc.log('Context action star returning RunPlugin(%s)' % plugin.get_url(action='star_item',type=type,ids=id,unstar=starred),xbmc.LOGDEBUG)
     return (
         label, 
         'RunPlugin(%s)' % plugin.get_url(action='star_item',type=type,ids=id,unstar=starred)
