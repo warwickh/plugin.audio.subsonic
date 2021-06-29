@@ -5,7 +5,8 @@ https://github.com/warwickh/plugin.audio.subsonic/issues
 Contributions are welcome:
 https://github.com/warwickh/plugin.audio.subsonic
 
-Updated to support Kodi 19 Matrix
+Master branch updated to support Kodi 19 Matrix
+Leia compatible version available in alternate branch
 
 ## Features
 * Browse by artist, albums (newest/most played/recently played/random), tracks (starred/random), and playlists
@@ -13,9 +14,13 @@ Updated to support Kodi 19 Matrix
 * Star songs
 
 ## Installation
+* Click the code button and download
+* Enable unknown sources and install from zip in Kodi
+or
 * Navigate to your `.kodi/addons/` folder
 * Clone this repository: `git clone https://github.com/warwickh/plugin.audio.subsonic.git`
 * (Re)start Kodi.
+* Note: You may need to install dependencies manually if installing this way
 
 ## TODO
 * Scrobble to Last.FM (http://forum.kodi.tv/showthread.php?tid=195597&pid=2429362#pid2429362)
