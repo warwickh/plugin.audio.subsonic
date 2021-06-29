@@ -1,7 +1,9 @@
 # Subsonic
 Kodi plugin to stream, star and download music from Subsonic.
+
 For feature requests / issues:
 https://github.com/warwickh/plugin.audio.subsonic/issues
+
 Contributions are welcome:
 https://github.com/warwickh/plugin.audio.subsonic
 
