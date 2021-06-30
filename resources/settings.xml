@@ -4,6 +4,7 @@
     <category label="30000">
         <setting label="30001" type="lsep" />
         <setting label="30002" id="subsonic_url" type="text"  default="http://demo.subsonic.org"/>
+        <setting label="30042" id="port" type="text"  default="80"/>
         <setting label="30003" id="username" type="text" default="guest3"/>
         <setting label="30004" id="password" type="text" option="hidden"  default="guest"/>
         <setting label="30005" type="lsep" />
@@ -13,14 +14,16 @@
         <setting label="30009" id="download_folder"  type="folder"  source="auto" option="writeable"/>
         <setting label="30010" type="lsep" />
         <setting label="30011" id="transcode_format_streaming" type="labelenum"  values="mp3|raw|flv|ogg"/>
-        <setting label="30012" id="bitrate_streaming" type="labelenum"  values="320|256|224|192|160|128|112|96|80|64|56|48|40|32"/>
+        <setting label="30012" id="bitrate_streaming" type="labelenum" default="0" values="320|256|224|192|160|128|112|96|80|64|56|48|40|32|0"/>
     </category>
     
     <!-- ADVANCED -->
   	<category label="30013">
         <setting label="30001" type="lsep" />
-        <setting label="30014" id="apiversion" type="labelenum"  values="1.11.0|1.12.0|1.13.0|1.14.0" default="1.13.0"/>
+        <setting label="30014" id="apiversion" type="labelenum"  values="1.11.0|1.12.0|1.13.0|1.14.0|1.15.0|1.16.0" default="1.15.0"/>
 		<setting label="30016" id="insecure" type="bool"  default="false" />
+		<setting label="30040" id="useget" type="bool"  default="false" />
+		<setting label="30041" id="legacyauth" type="bool" default="false" />
         <setting label="30017" type="lsep" />
         <setting label="30018" id="cachetime" type="labelenum"  default="15" values="1|5|15|30|60|120|180|720|1440"/>
 		

@@ -152,9 +152,20 @@ msgctxt "#30038"
 msgid "Browse"
 msgstr "Parcourir"
 
-
 msgctxt "#30039"
 msgid "Search"
 msgstr "Rechercher"
 
+
+msgctxt "#30040"
+msgid "useGET"
+msgstr ""
+
+msgctxt "#30041"
+msgid "legacyauth"
+msgstr ""
+
+msgctxt "#30042"
+msgid "port"
+msgstr ""
 

@@ -6,6 +6,7 @@
 # Created on: 14 January 2017
 # License: GPL v.3 https://www.gnu.org/copyleft/gpl.html
 
+import xbmcvfs
 import os
 import xbmcaddon
 import xbmcplugin
@@ -14,12 +15,13 @@ import json
 import shutil
 import dateutil.parser
 from datetime import datetime
+from collections import MutableMapping, namedtuple
 
 # Add the /lib folder to sys
-sys.path.append(xbmc.translatePath(os.path.join(xbmcaddon.Addon("plugin.audio.subsonic").getAddonInfo("path"), "lib")))
+sys.path.append(xbmcvfs.translatePath(os.path.join(xbmcaddon.Addon("plugin.audio.subsonic").getAddonInfo("path"), "lib")))
 
 
-import libsonic_extra #TO FIX - we should get rid of this and use only libsonic
+import libsonic#Removed libsonic_extra
 
 from simpleplugin import Plugin
 from simpleplugin import Addon
@@ -32,7 +34,10 @@ plugin = Plugin()
 
 connection = None
 cachetime = int(Addon().get_setting('cachetime'))
+local_starred = set({})
 
+ListContext = namedtuple('ListContext', ['listing', 'succeeded','update_listing', 'cache_to_disk','sort_methods', 'view_mode','content', 'category'])
+PlayContext = namedtuple('PlayContext', ['path', 'play_item', 'succeeded'])
 def popup(text, time=5000, image=None):
     title = plugin.addon.getAddonInfo('name')
     icon = plugin.addon.getAddonInfo('icon')
@@ -42,26 +47,25 @@ def popup(text, time=5000, image=None):
 def get_connection():
     global connection
     
-    if connection is None:
-        
-        connected = False
-        
-        # Create connection
-
+    if connection==None:   
+        connected = False  
+        # Create connection      
         try:
-            connection = libsonic_extra.SubsonicClient(
-                Addon().get_setting('subsonic_url'),
-                Addon().get_setting('username', convert=False),
-                Addon().get_setting('password', convert=False),
-                Addon().get_setting('apiversion'),
-                Addon().get_setting('insecure') == 'true',
-                Addon().get_setting('legacyauth') == 'true',
-                )
+            connection = libsonic.Connection(
+                baseUrl=Addon().get_setting('subsonic_url'),
+                username=Addon().get_setting('username', convert=False),
+                password=Addon().get_setting('password', convert=False),
+                port=Addon().get_setting('port'),
+                apiVersion=Addon().get_setting('apiversion'),
+                insecure=Addon().get_setting('insecure'),
+                legacyAuth=Addon().get_setting('legacyauth'),
+                useGET=Addon().get_setting('useget'),
+            )            
             connected = connection.ping()
         except:
             pass
 
-        if connected is False:
+        if connected==False:
             popup('Connection error')
             return False
 
@@ -73,7 +77,7 @@ def root(params):
     # get connection
     connection = get_connection()
     
-    if connection is False:
+    if connection==False:
         return
     
     listing = []
@@ -129,7 +133,7 @@ def root(params):
                         )
         })  # Item label
 
-    return plugin.create_listing(
+    add_directory_items(create_listing(
         listing,
         #succeeded = True, #if False Kodi won’t open a new listing and stays on the current level.
         #update_listing = False, #if True, Kodi won’t open a sub-listing but refresh the current one. 
@@ -137,7 +141,7 @@ def root(params):
         sort_methods = None, #he list of integer constants representing virtual folder sort methods.
         #view_mode = None, #a numeric code for a skin view mode. View mode codes are different in different skins except for 50 (basic listing).
         #content = None #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
-    )
+    ))
 
 @plugin.action()
 def menu_albums(params):
@@ -145,7 +149,7 @@ def menu_albums(params):
     # get connection
     connection = get_connection()
     
-    if connection is False:
+    if connection==False:
         return
     
     listing = []
@@ -195,7 +199,7 @@ def menu_albums(params):
                         )
         })  # Item label
 
-    return plugin.create_listing(
+    add_directory_items(create_listing(
         listing,
         #succeeded = True, #if False Kodi won’t open a new listing and stays on the current level.
         #update_listing = False, #if True, Kodi won’t open a sub-listing but refresh the current one. 
@@ -203,7 +207,7 @@ def menu_albums(params):
         #sort_methods = None, #he list of integer constants representing virtual folder sort methods.
         #view_mode = None, #a numeric code for a skin view mode. View mode codes are different in different skins except for 50 (basic listing).
         #content = None #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
-    )
+    ))
 
 @plugin.action()
 def menu_tracks(params):
@@ -211,7 +215,7 @@ def menu_tracks(params):
     # get connection
     connection = get_connection()
     
-    if connection is False:
+    if connection==False:
         return
     
     listing = []
@@ -247,7 +251,7 @@ def menu_tracks(params):
             )
         })  # Item label
 
-    return plugin.create_listing(
+    add_directory_items(create_listing(
         listing,
         #succeeded = True, #if False Kodi won’t open a new listing and stays on the current level.
         #update_listing = False, #if True, Kodi won’t open a sub-listing but refresh the current one. 
@@ -255,7 +259,7 @@ def menu_tracks(params):
         #sort_methods = None, #he list of integer constants representing virtual folder sort methods.
         #view_mode = None, #a numeric code for a skin view mode. View mode codes are different in different skins except for 50 (basic listing).
         #content = None #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
-    )
+    ))
 
 @plugin.action()
 #@plugin.cached(cachetime) # cache (in minutes)
@@ -263,13 +267,13 @@ def browse_folders(params):
     # get connection
     connection = get_connection()
     
-    if connection is False:
+    if connection==False:
         return
 
     listing = []
 
     # Get items
-    items = connection.walk_folders()
+    items = walk_folders()
 
     # Iterate through items
     for item in items:
@@ -288,7 +292,7 @@ def browse_folders(params):
         plugin.log('One single Media Folder found; do return listing from browse_indexes()...')
         return browse_indexes(params)
     else:
-        return plugin.create_listing(listing)
+        add_directory_items(create_listing(listing))
 
 @plugin.action()
 #@plugin.cached(cachetime) # cache (in minutes)
@@ -296,7 +300,7 @@ def browse_indexes(params):
     # get connection
     connection = get_connection()
     
-    if connection is False:
+    if connection==False:
         return
 
     listing = []
@@ -304,7 +308,7 @@ def browse_indexes(params):
     # Get items 
     # optional folder ID
     folder_id = params.get('folder_id')
-    items = connection.walk_index(folder_id)
+    items = walk_index(folder_id)
 
     # Iterate through items
     for item in items:
@@ -318,9 +322,9 @@ def browse_indexes(params):
         }
         listing.append(entry)
         
-    return plugin.create_listing(
+    add_directory_items(create_listing(
         listing
-    )
+    ))
 
 @plugin.action()
 #@plugin.cached(cachetime) # cache (in minutes)
@@ -328,15 +332,15 @@ def list_directory(params):
     # get connection
     connection = get_connection()
     
-    if connection is False:
+    if connection==False:
         return
 
     listing = []
     
     # Get items
     id = params.get('id')
-    items = connection.walk_directory(id)
-    
+    items = walk_directory(id)
+
     # Iterate through items
     for item in items:
         
@@ -356,9 +360,9 @@ def list_directory(params):
 
         listing.append(entry)
         
-    return plugin.create_listing(
+    add_directory_items(create_listing(
         listing
-    )
+    ))
 
 @plugin.action()
 #@plugin.cached(cachetime) # cache (in minutes)
@@ -370,13 +374,13 @@ def browse_library(params):
     # get connection
     connection = get_connection()
     
-    if connection is False:
+    if connection==False:
         return
 
     listing = []
 
     # Get items
-    items = connection.walk_artists()
+    items = walk_artists()
 
     # Iterate through items
 
@@ -394,7 +398,7 @@ def browse_library(params):
         
         listing.append(entry)
  
-    return plugin.create_listing(
+    add_directory_items(create_listing(
         listing,
         #succeeded = True, #if False Kodi won’t open a new listing and stays on the current level.
         #update_listing = False, #if True, Kodi won’t open a sub-listing but refresh the current one. 
@@ -402,7 +406,7 @@ def browse_library(params):
         sort_methods = get_sort_methods('artists',params), #he list of integer constants representing virtual folder sort methods.
         #view_mode = None, #a numeric code for a skin view mode. View mode codes are different in different skins except for 50 (basic listing).
         content = 'artists' #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
-    )
+    ))
 
 @plugin.action()
 #@plugin.cached(cachetime) #cache (in minutes)
@@ -417,7 +421,7 @@ def list_albums(params):
     # get connection
     connection = get_connection()
     
-    if connection is False:
+    if connection==False:
         return
 
     #query
@@ -443,14 +447,14 @@ def list_albums(params):
 
     #Get items
     if 'artist_id' in params:
-        generator = connection.walk_artist(params.get('artist_id'))
+        generator = walk_artist(params.get('artist_id'))
     else:
-        generator = connection.walk_albums(**query_args)
+        generator = walk_albums(**query_args)
     
     #make a list out of the generator so we can iterate it several times
     items = list(generator)
     
-    #check if there is only one artist for this album (and then hide it)
+    #check if there==only one artist for this album (and then hide it)
     artists = [item.get('artist',None) for item in items]
     if len(artists) <= 1:
         params['hide_artist']   = True
@@ -471,7 +475,7 @@ def list_albums(params):
         link_next = navigate_next(params)
         listing.append(link_next)
 
-    return plugin.create_listing(
+    add_directory_items(create_listing(
         listing,
         #succeeded = True, #if False Kodi won’t open a new listing and stays on the current level.
         #update_listing = False, #if True, Kodi won’t open a sub-listing but refresh the current one. 
@@ -479,7 +483,7 @@ def list_albums(params):
         sort_methods = get_sort_methods('albums',params), 
         #view_mode = None, #a numeric code for a skin view mode. View mode codes are different in different skins except for 50 (basic listing).
         content = 'albums' #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
-    )
+    ))
 
 @plugin.action()
 #@plugin.cached(cachetime) #cache (in minutes)
@@ -513,16 +517,16 @@ def list_tracks(params):
     # get connection
     connection = get_connection()
     
-    if connection is False:
+    if connection==False:
         return
 
     # Album
     if 'album_id' in params:
-        generator = connection.walk_album(params['album_id'])
+        generator = walk_album(params['album_id'])
         
     # Playlist
     elif 'playlist_id' in params:
-        generator = connection.walk_playlist(params['playlist_id'])
+        generator = walk_playlist(params['playlist_id'])
         
         #TO FIX
         #tracknumber = 0
@@ -532,12 +536,12 @@ def list_tracks(params):
         
     # Starred
     elif menu_id == 'tracks_starred':
-        generator = connection.walk_tracks_starred()
+        generator = walk_tracks_starred()
         
     
     # Random
     elif menu_id == 'tracks_random':
-        generator = connection.walk_tracks_random(**query_args)
+        generator = walk_tracks_random(**query_args)
     # Filters
     #else:
         #TO WORK
@@ -545,7 +549,7 @@ def list_tracks(params):
     #make a list out of the generator so we can iterate it several times
     items = list(generator)
 
-    #check if there is only one artist for this album (and then hide it)
+    #check if there==only one artist for this album (and then hide it)
     artists = [item.get('artist',None) for item in items]
     if len(artists) <= 1:
         params['hide_artist']   = True
@@ -573,7 +577,7 @@ def list_tracks(params):
 
 
 
-    return plugin.create_listing(
+    add_directory_items(create_listing(
         listing,
         #succeeded =        True, #if False Kodi won’t open a new listing and stays on the current level.
         #update_listing =   False, #if True, Kodi won’t open a sub-listing but refresh the current one. 
@@ -581,9 +585,9 @@ def list_tracks(params):
         sort_methods=       get_sort_methods('tracks',params),
         #view_mode =        None, #a numeric code for a skin view mode. View mode codes are different in different skins except for 50 (basic listing).
         content =           'songs' #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
-    )
+    ))
 
-#stars (persistent) cache is used to know what context action (star/unstar) we should display.
+#stars (persistent) cache==used to know what context action (star/unstar) we should display.
 #run this function every time we get starred items.
 #ids can be a single ID or a list
 #using a set makes sure that IDs will be unique.
@@ -594,13 +598,13 @@ def list_playlists(params):
     # get connection
     connection = get_connection()
     
-    if connection is False:
+    if connection==False:
         return
 
     listing = []
 
     # Get items
-    items = connection.walk_playlists()
+    items = walk_playlists()
 
     # Iterate through items
 
@@ -608,7 +612,7 @@ def list_playlists(params):
         entry = get_entry_playlist(item,params)
         listing.append(entry)
         
-    return plugin.create_listing(
+    add_directory_items(create_listing(
         listing,
         #succeeded = True, #if False Kodi won’t open a new listing and stays on the current level.
         #update_listing = False, #if True, Kodi won’t open a sub-listing but refresh the current one. 
@@ -616,7 +620,7 @@ def list_playlists(params):
         sort_methods = get_sort_methods('playlists',params), #he list of integer constants representing virtual folder sort methods.
         #view_mode = None, #a numeric code for a skin view mode. View mode codes are different in different skins except for 50 (basic listing).
         #content = None #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
-    )
+    ))
 @plugin.action()
 #@plugin.cached(cachetime) #cache (in minutes)
 def search(params):
@@ -630,7 +634,7 @@ def search(params):
     # get connection
     connection = get_connection()
 
-    if connection is False:
+    if connection==False:
         return
 
     listing = []
@@ -646,7 +650,7 @@ def search(params):
         plugin.log('One single Media Folder found; do return listing from browse_indexes()...')
         return browse_indexes(params)
     else:
-        return plugin.create_listing(listing)
+        add_directory_items(create_listing(listing))
 
 
 
@@ -659,7 +663,7 @@ def play_track(params):
     # get connection
     connection = get_connection()
     
-    if connection is False:
+    if connection==False:
         return
 
     url = connection.streamUrl(sid=id,
@@ -667,11 +671,11 @@ def play_track(params):
         tformat=Addon().get_setting('transcode_format_streaming')
     )
 
-    return url
+    #return url
+    _set_resolved_url(resolve_url(url))
 
 @plugin.action()
 def star_item(params):
-
     ids=     params.get('ids'); #can be single or lists of IDs
     unstar=  params.get('unstar',False);
     unstar = (unstar) and (unstar != 'None') and (unstar != 'False') #TO FIX better statement ?
@@ -697,7 +701,7 @@ def star_item(params):
     # get connection
     connection = get_connection()
     
-    if connection is False:
+    if connection==False:
         return
 
     ###
@@ -709,15 +713,12 @@ def star_item(params):
             request = connection.unstar(sids, albumIds, artistIds)
         else:
             request = connection.star(sids, albumIds, artistIds)
-
         if request['status'] == 'ok':
             did_action = True
 
     except:
         pass
 
-    ###
-    
     if did_action:
         
         if unstar:
@@ -740,8 +741,8 @@ def star_item(params):
         else:
             plugin.log_error('Unable to star %s #%s' % (type,json.dumps(ids)))
 
-    return did_action
-        
+    #return did_action
+    return    
 
         
 @plugin.action()
@@ -774,7 +775,8 @@ def download_item(params):
         plugin.log_error('Unable to downloaded %s #%s' % (type,id))
 
     return did_action
-    
+
+#@plugin.cached(cachetime) #cache (in minutes)    
 def get_entry_playlist(item,params):
     image = connection.getCoverArtUrl(item.get('coverArt'))
     return {
@@ -796,6 +798,7 @@ def get_entry_playlist(item,params):
     }
 
 #star (or unstar) an item
+#@plugin.cached(cachetime) #cache (in minutes)
 def get_entry_artist(item,params):
     image = connection.getCoverArtUrl(item.get('coverArt'))
     return {
@@ -815,6 +818,7 @@ def get_entry_artist(item,params):
         }
     }
 
+#@plugin.cached(cachetime) #cache (in minutes)
 def get_entry_album(item, params):
     
     image = connection.getCoverArtUrl(item.get('coverArt'))
@@ -857,6 +861,7 @@ def get_entry_album(item, params):
 
     return entry
 
+#@plugin.cached(cachetime) #cache (in minutes)
 def get_entry_track(item,params):
     
     menu_id = params.get('menu_id')
@@ -904,11 +909,21 @@ def get_entry_track(item,params):
 
     return entry
 
+#@plugin.cached(cachetime) #cache (in minutes)
 def get_starred_label(id,label):
     if is_starred(id):
         label = '[COLOR=FF00FF00]%s[/COLOR]' % label
     return label
 
+def is_starred(id):
+    starred = stars_cache_get()
+    id = int(id)
+    if id in starred:
+        return True
+    else:
+        return False
+
+#@plugin.cached(cachetime) #cache (in minutes)
 def get_entry_track_label(item,hide_artist = False):
     if hide_artist:
         label = item.get('title', '<Unknown>')
@@ -920,6 +935,7 @@ def get_entry_track_label(item,hide_artist = False):
 
     return get_starred_label(item.get('id'),label)
 
+#@plugin.cached(cachetime) #cache (in minutes)
 def get_entry_album_label(item,hide_artist = False):
     if hide_artist:
         label = item.get('name', '<Unknown>')
@@ -928,7 +944,7 @@ def get_entry_album_label(item,hide_artist = False):
                              item.get('name', '<Unknown>'))
     return get_starred_label(item.get('id'),label)
 
-
+#@plugin.cached(cachetime) #cache (in minutes)
 def get_sort_methods(type,params):
     #sort method for list types
     #https://github.com/xbmc/xbmc/blob/master/xbmc/SortFileItem.h
@@ -947,7 +963,7 @@ def get_sort_methods(type,params):
         xbmcplugin.SORT_METHOD_UNSORTED
     ]
     
-    if type is 'artists':
+    if type=='artists':
         
         artists = [
             xbmcplugin.SORT_METHOD_ARTIST
@@ -955,7 +971,7 @@ def get_sort_methods(type,params):
 
         sortable = sortable + artists
         
-    elif type is 'albums':
+    elif type=='albums':
         
         albums = [
             xbmcplugin.SORT_METHOD_ALBUM,
@@ -969,7 +985,7 @@ def get_sort_methods(type,params):
 
         sortable = sortable + albums
         
-    elif type is 'tracks':
+    elif type=='tracks':
 
         tracks = [
             xbmcplugin.SORT_METHOD_TITLE,
@@ -992,7 +1008,7 @@ def get_sort_methods(type,params):
         
         sortable = sortable + tracks
         
-    elif type is 'playlists':
+    elif type=='playlists':
 
         playlists = [
             xbmcplugin.SORT_METHOD_TITLE,
@@ -1010,7 +1026,7 @@ def stars_cache_update(ids,remove=False):
     #get existing cache set
     starred = stars_cache_get()
     
-    #make sure this is a list
+    #make sure this==a list
     if not isinstance(ids, list):
         ids = [ids]
     
@@ -1034,21 +1050,19 @@ def stars_cache_update(ids,remove=False):
     plugin.log(starred)
 
 
-def stars_cache_get():
-    with plugin.get_storage() as storage:
-        starred = storage.get('starred_ids',set())
-
-    plugin.log('stars_cache_get:')
-    plugin.log(starred)
-    return starred
-
-def is_starred(id):
-    starred = stars_cache_get()
-    id = int(id)
-    if id in starred:
-        return True
+def stars_cache_get(): #Retrieving stars from cache is too slow, so load to local variable
+    global local_starred    
+    plugin.log(len(local_starred))   
+    if(len(local_starred)>0):
+        plugin.log('stars already loaded:')
+        plugin.log(local_starred)        
+        return(local_starred)
     else:
-        return False
+        with plugin.get_storage() as storage:
+            local_starred = storage.get('starred_ids',set())
+            plugin.log('stars_cache_get:')
+            plugin.log(local_starred)
+            return local_starred
 
 def navigate_next(params):
   
@@ -1093,12 +1107,13 @@ def context_action_star(type,id):
 
         label = Addon().get_localized_string(30034)
     
+    xbmc.log('Context action star returning RunPlugin(%s)' % plugin.get_url(action='star_item',type=type,ids=id,unstar=starred),xbmc.LOGDEBUG)
     return (
         label, 
-        'XBMC.RunPlugin(%s)' % plugin.get_url(action='star_item',type=type,ids=id,unstar=starred)
+        'RunPlugin(%s)' % plugin.get_url(action='star_item',type=type,ids=id,unstar=starred)
     )
 
-#Subsonic API says this is supported for artist,tracks and albums,
+#Subsonic API says this==supported for artist,tracks and albums,
 #But I can see it available only for tracks on Subsonic 5.3, so disable it.
 def can_star(type,ids = None):
     
@@ -1124,11 +1139,11 @@ def context_action_download(type,id):
     
     return (
         label, 
-        'XBMC.RunPlugin(%s)' % plugin.get_url(action='download_item',type=type,id=id)
+        'RunPlugin(%s)' % plugin.get_url(action='download_item',type=type,id=id)
     )
 
 def can_download(type,id = None):
-    if id is None:
+    if id==None:
         return False
     
     if type == 'track':
@@ -1138,7 +1153,7 @@ def can_download(type,id = None):
     
 def download_tracks(ids):
 
-    #popup is fired before, in download_item
+    #popup==fired before, in download_item
     download_folder = Addon().get_setting('download_folder')
     if not download_folder:
         return
@@ -1163,7 +1178,7 @@ def download_tracks(ids):
     # get connection
     connection = get_connection()
     
-    if connection is False:
+    if connection==False:
         return
 
     #progress...
@@ -1236,7 +1251,7 @@ def download_album(id):
     # get connection
     connection = get_connection()
     
-    if connection is False:
+    if connection==False:
         return
 
     # get album infos
@@ -1255,6 +1270,275 @@ def download_album(id):
 
     download_tracks(ids)
 
+#@plugin.cached(cachetime) #cache (in minutes)
+def create_listing(listing, succeeded=True, update_listing=False, cache_to_disk=False, sort_methods=None,view_mode=None, content=None, category=None):
+        return ListContext(listing, succeeded, update_listing, cache_to_disk,sort_methods, view_mode, content, category)
+
+
+def resolve_url(path='', play_item=None, succeeded=True):
+    """
+    Create and return a context dict to resolve a playable URL
+    :param path: the path to a playable media.
+    :type path: str or unicode
+    :param play_item: a dict of item properties as described in the class docstring.
+        It allows to set additional properties for the item being played, like graphics, metadata etc.
+        if ``play_item`` parameter==present, then ``path`` value==ignored, and the path must be set via
+        ``'path'`` property of a ``play_item`` dict.
+    :type play_item: dict
+    :param succeeded: if ``False``, Kodi won't play anything
+    :type succeeded: bool
+    :return: context object containing necessary parameters
+        for Kodi to play the selected media.
+    :rtype: PlayContext
+    """
+    return PlayContext(path, play_item, succeeded)
+
+#@plugin.cached(cachetime) #cache (in minutes)
+def create_list_item(item):
+    """
+    Create an :class:`xbmcgui.ListItem` instance from an item dict
+    :param item: a dict of ListItem properties
+    :type item: dict
+    :return: ListItem instance
+    :rtype: xbmcgui.ListItem
+    """
+    major_version = xbmc.getInfoLabel('System.BuildVersion')[:2]
+    if major_version >= '18':
+        list_item = xbmcgui.ListItem(label=item.get('label', ''),
+                                     label2=item.get('label2', ''),
+                                     path=item.get('path', ''),
+                                     offscreen=item.get('offscreen', False))
+
+
+    art = item.get('art', {})
+    art['thumb'] = item.get('thumb', '')
+    art['icon'] = item.get('icon', '')
+    art['fanart'] = item.get('fanart', '')
+    item['art'] = art
+    cont_look = item.get('content_lookup')
+    if cont_look is not None:
+        list_item.setContentLookup(cont_look)
+    if item.get('art'):
+        list_item.setArt(item['art'])
+    if item.get('stream_info'):
+        for stream, stream_info in item['stream_info'].items():
+            list_item.addStreamInfo(stream, stream_info)
+    if item.get('info'):
+        for media, info in item['info'].items():
+            list_item.setInfo(media, info)
+    if item.get('context_menu') is not None:
+        list_item.addContextMenuItems(item['context_menu'])
+    if item.get('subtitles'):
+        list_item.setSubtitles(item['subtitles'])
+    if item.get('mime'):
+        list_item.setMimeType(item['mime'])
+    if item.get('properties'):
+        for key, value in item['properties'].items():
+            list_item.setProperty(key, value)
+    if major_version >= '17':
+        cast = item.get('cast')
+        if cast is not None:
+            list_item.setCast(cast)
+        db_ids = item.get('online_db_ids')
+        if db_ids is not None:
+            list_item.setUniqueIDs(db_ids)
+        ratings = item.get('ratings')
+        if ratings is not None:
+            for rating in ratings:
+                list_item.setRating(**rating)
+    return list_item
+
+def _set_resolved_url(context):
+
+    plugin.log_debug('Resolving URL from {0}'.format(str(context)))
+    if context.play_item==None:
+        list_item = xbmcgui.ListItem(path=context.path)
+    else:
+        list_item = self.create_list_item(context.play_item)
+    xbmcplugin.setResolvedUrl(plugin.handle, context.succeeded, list_item)
+
+
+#@plugin.cached(cachetime) #cache (in minutes)
+def add_directory_items(context):
+    plugin.log_debug('Creating listing from {0}'.format(str(context)))
+    if context.category is not None:
+        xbmcplugin.setPluginCategory(plugin.handle, context.category)
+    if context.content is not None:
+        xbmcplugin.setContent(plugin.handle, context.content)  # This must be at the beginning
+    for item in context.listing:
+        is_folder = item.get('is_folder', True)
+        if item.get('list_item') is not None:
+            list_item = item['list_item']
+        else:
+            list_item = create_list_item(item)
+            if item.get('is_playable'):
+                list_item.setProperty('IsPlayable', 'true')
+                is_folder = False
+        xbmcplugin.addDirectoryItem(plugin.handle, item['url'], list_item, is_folder)
+    if context.sort_methods is not None:
+        if isinstance(context.sort_methods, (int, dict)):
+            sort_methods = [context.sort_methods]
+        elif isinstance(context.sort_methods, (tuple, list)):
+            sort_methods = context.sort_methods
+        else:
+            raise TypeError(
+                'sort_methods parameter must be of int, dict, tuple or list type!')
+        for method in sort_methods:
+            if isinstance(method, int):
+                xbmcplugin.addSortMethod(plugin.handle, method)
+            elif isinstance(method, dict):
+                xbmcplugin.addSortMethod(plugin.handle, **method)
+            else:
+                raise TypeError(
+                    'method parameter must be of int or dict type!')
+
+    xbmcplugin.endOfDirectory(plugin.handle,
+                              context.succeeded,
+                              context.update_listing,
+                              context.cache_to_disk)
+    if context.view_mode is not None:
+        xbmc.executebuiltin('Container.SetViewMode({0})'.format(context.view_mode))
+
+def walk_index(folder_id=None):
+    """
+    Request Subsonic's index and iterate each item.
+    """
+
+    response = connection.getIndexes(folder_id)
+
+    for index in response["indexes"]["index"]:
+        for artist in index["artist"]:
+            yield artist
+            
+def walk_playlists():
+    """
+    Request Subsonic's playlists and iterate over each item.
+    """
+
+    response = connection.getPlaylists()
+
+    for child in response["playlists"]["playlist"]:
+        yield child
+
+
+def walk_playlist(playlist_id):
+    """
+    Request Subsonic's playlist items and iterate over each item.
+    """
+    response = connection.getPlaylist(playlist_id)
+
+    for child in response["playlist"]["entry"]:
+        yield child
+
+def walk_folders():
+    response = connection.getMusicFolders()
+    
+    for child in response["musicFolders"]["musicFolder"]:
+        yield child
+
+def walk_directory(directory_id):
+    """
+    Request a Subsonic music directory and iterate over each item.
+    """
+    response = connection.getMusicDirectory(directory_id)
+    
+    try:
+        for child in response["directory"]["child"]:
+            if child.get("isDir"):
+                for child in walk_directory(child["id"]):
+                    yield child
+            else:
+                yield child
+    except:
+        yield from ()
+
+def walk_artist(artist_id):
+    """
+    Request a Subsonic artist and iterate over each album.
+    """
+
+    response = connection.getArtist(artist_id)
+
+    for child in response["artist"]["album"]:
+        yield child
+
+def walk_artists():
+    """
+    (ID3 tags)
+    Request all artists and iterate over each item.
+    """
+
+    response = connection.getArtists()
+
+    for index in response["artists"]["index"]:
+        for artist in index["artist"]:
+            yield artist
+
+def walk_genres():
+    """
+    (ID3 tags)
+    Request all genres and iterate over each item.
+    """
+
+    response = connection.getGenres()
+
+    for genre in response["genres"]["genre"]:
+        yield genre
+
+def walk_albums(ltype, size=None, fromYear=None,toYear=None, genre=None, offset=None):
+    """
+    (ID3 tags)
+    Request all albums for a given genre and iterate over each album.
+    """
+    
+    if ltype == 'byGenre' and genre is None:
+        return
+    
+    if ltype == 'byYear' and (fromYear is None or toYear is None):
+        return
+
+    response = connection.getAlbumList2(
+        ltype=ltype, size=size, fromYear=fromYear, toYear=toYear,genre=genre, offset=offset)
+
+    if not response["albumList2"]["album"]:
+        return
+
+    for album in response["albumList2"]["album"]:
+        yield album
+
+
+def walk_album(album_id):
+    """
+    (ID3 tags)
+    Request an album and iterate over each item.
+    """
+
+    response = connection.getAlbum(album_id)
+
+    for song in response["album"]["song"]:
+        yield song
+
+def walk_tracks_random(size=None, genre=None, fromYear=None,toYear=None):
+    """
+    Request random songs by genre and/or year and iterate over each song.
+    """
+
+    response = connection.getRandomSongs(
+        size=size, genre=genre, fromYear=fromYear, toYear=toYear)
+
+    for song in response["randomSongs"]["song"]:
+        yield song
+        
+
+def walk_tracks_starred():
+    """
+    Request Subsonic's starred songs and iterate over each item.
+    """
+
+    response = connection.getStarred()
+
+    for song in response["starred"]["song"]:
+        yield song
 
 
 # Start plugin from within Kodi.
@@ -1262,13 +1546,3 @@ if __name__ == "__main__":
     # Map actions
     # Note that we map callable objects without brackets ()
     plugin.run()
-
-
-
-
-
-    
-    
-    
-    
-    

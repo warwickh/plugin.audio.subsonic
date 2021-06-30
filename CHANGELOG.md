@@ -1,5 +1,14 @@
 # Changelog
 
+## v3.0.0
+Released 29th June 2021 (by warwickh)
+* Basic update to provide Matrix compatility. Not tested on Kodi below v19
+* Updates simpleplugin to latest version (3.0.0) https://github.com/vlmaksime/script.module.simpleplugin
+* Moves some legacy simpleplugin static routines into main.py
+* Removes dependancy on libsonic_extra by moving some walk functions into main.py
+* Updates libsonic to latest version and adds functions for returning raw url for populating menus
+* Move to version 3+ for diffferentiation from Leia compatible version
+
 ## v2.0.8
 Released 29th November 2017 (by Heruwar)
 * Fixes a security issue where the password is sent as plaintext in the URL query parameters when methods from libsonic_extas are used. 

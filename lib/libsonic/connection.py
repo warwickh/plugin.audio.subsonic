@@ -15,23 +15,28 @@ You should have received a copy of the GNU General Public License
 along with py-sonic.  If not, see <http://www.gnu.org/licenses/>
 """
 
-from urllib import urlencode
-from .errors import *
-from pprint import pprint
-from cStringIO import StringIO
+from libsonic.errors import *
 from netrc import netrc
 from hashlib import md5
-import json, urllib2, httplib, logging, socket, ssl, sys, os
+import urllib.request
+import urllib.error
+from http import client as http_client
+from urllib.parse import urlencode
+from io import StringIO
 
-API_VERSION = '1.14.0'
+import json
+import logging
+import socket
+import ssl
+import sys
+import os
+import xbmc
+
+API_VERSION = '1.16.1'
 
 logger = logging.getLogger(__name__)
 
-class HTTPSConnectionChain(httplib.HTTPSConnection):
-    _preferred_ssl_protos = sorted([ p for p in dir(ssl)
-        if p.startswith('PROTOCOL_') ], reverse=True)
-    _ssl_working_proto = None
-
+class HTTPSConnectionChain(http_client.HTTPSConnection):
     def _create_sock(self):
         sock = socket.create_connection((self.host, self.port), self.timeout)
         if self._tunnel_host:
@@ -40,38 +45,21 @@ class HTTPSConnectionChain(httplib.HTTPSConnection):
         return sock
 
     def connect(self):
-        if self._ssl_working_proto is not None:
-            # If we have a working proto, let's use that straight away
-            logger.debug("Using known working proto: '%s'",
-                         self._ssl_working_proto)
-            sock = self._create_sock()
-            self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file,
-                ssl_version=self._ssl_working_proto)
-            return
+        sock = self._create_sock()
+        try:
+            self.sock = ssl.create_default_context().wrap_socket(sock,
+                server_hostname=self.host)
+        except:
+            sock.close()
 
-        # Try connecting via the different SSL protos in preference order
-        for proto_name in self._preferred_ssl_protos:
-            sock = self._create_sock()
-            proto = getattr(ssl, proto_name, None)
-            try:
-                self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file,
-                    ssl_version=proto)
-            except:
-                sock.close()
-            else:
-                # Cache the working ssl version
-                HTTPSConnectionChain._ssl_working_proto = proto
-                break
-
-
-class HTTPSHandlerChain(urllib2.HTTPSHandler):
+class HTTPSHandlerChain(urllib.request.HTTPSHandler):
     def https_open(self, req):
         return self.do_open(HTTPSConnectionChain, req)
 
 # install opener
-urllib2.install_opener(urllib2.build_opener(HTTPSHandlerChain()))
+urllib.request.install_opener(urllib.request.build_opener(HTTPSHandlerChain()))
 
-class PysHTTPRedirectHandler(urllib2.HTTPRedirectHandler):
+class PysHTTPRedirectHandler(urllib.request.HTTPRedirectHandler):
     """
     This class is used to override the default behavior of the
     HTTPRedirectHandler, which does *not* redirect POST data
@@ -81,24 +69,30 @@ class PysHTTPRedirectHandler(urllib2.HTTPRedirectHandler):
         if (code in (301, 302, 303, 307) and m in ("GET", "HEAD")
             or code in (301, 302, 303) and m == "POST"):
             newurl = newurl.replace(' ', '%20')
-            newheaders = dict((k, v) for k, v in req.headers.items()
+            newheaders = dict((k, v) for k, v in list(req.headers.items())
                 if k.lower() not in ("content-length", "content-type")
             )
             data = None
-            if req.has_data():
-                data = req.get_data()
-            return urllib2.Request(newurl,
+            if req.data:
+                data = req.data
+            return urllib.request.Request(newurl,
                            data=data,
                            headers=newheaders,
-                           origin_req_host=req.get_origin_req_host(),
+                           origin_req_host=req.origin_req_host,
                            unverifiable=True)
         else:
-            raise urllib2.HTTPError(req.get_full_url(), code, msg, headers, fp)
+            raise urllib.error.HTTPError(
+                req.get_full_url(),
+                code,
+                msg,
+                headers,
+                fp,
+            )
 
 class Connection(object):
     def __init__(self, baseUrl, username=None, password=None, port=4040,
             serverPath='/rest', appName='py-sonic', apiVersion=API_VERSION,
-            insecure=False, useNetrc=None, legacyAuth=False, useGET=False):
+            insecure=False, useNetrc=None, legacyAuth=False, useGET=True):
         """
         This will create a connection to your subsonic server
 
@@ -271,6 +265,52 @@ class Connection(object):
         self._checkStatus(res)
         return res
 
+    def getScanStatus(self):
+        """
+        since: 1.15.0
+
+        returns the current status for media library scanning.
+        takes no extra parameters.
+
+        returns a dict like the following:
+
+        {'status': 'ok', 'version': '1.15.0',
+        'scanstatus': {'scanning': true, 'count': 4680}}
+
+        'count' is the total number of items to be scanned
+        """
+        methodName = 'getScanStatus'
+        viewName = '%s.view' % methodName
+
+        req = self._getRequest(viewName)
+        res = self._doInfoReq(req)
+        self._checkStatus(res)
+        return res
+
+    def startScan(self):
+        """
+        since: 1.15.0
+
+        Initiates a rescan of the media libraries.
+        Takes no extra parameters.
+
+        returns a dict like the following:
+
+        {'status': 'ok', 'version': '1.15.0',
+        'scanstatus': {'scanning': true, 'count': 0}}
+
+        'scanning' changes to false when a scan is complete
+        'count' starts a 0 and ends at the total number of items scanned
+
+        """
+        methodName = 'startScan'
+        viewName = '%s.view' % methodName
+
+        req = self._getRequest(viewName)
+        res = self._doInfoReq(req)
+        self._checkStatus(res)
+        return res
+
     def getMusicFolders(self):
         """
         since: 1.0.0
@@ -344,7 +384,7 @@ class Connection(object):
                                 artists for the given folder ID from
                                 the getMusicFolders call
         ifModifiedSince:int     If specified, return a result if the artist
-                                collection has changed since the given 
+                                collection has changed since the given
                                 unix timestamp
 
         Returns a dict like the following:
@@ -809,6 +849,58 @@ class Connection(object):
             self._checkStatus(res)
         return res
 
+    def streamUrl(self, sid, maxBitRate=0, tformat=None, timeOffset=None,
+            size=None, estimateContentLength=False, converted=False):
+        """
+        since: 1.0.0
+
+        Downloads a given music file.
+
+        sid:str         The ID of the music file to download.
+        maxBitRate:int  (since: 1.2.0) If specified, the server will
+                        attempt to limit the bitrate to this value, in
+                        kilobits per second. If set to zero (default), no limit
+                        is imposed. Legal values are: 0, 32, 40, 48, 56, 64,
+                        80, 96, 112, 128, 160, 192, 224, 256 and 320.
+        tformat:str     (since: 1.6.0) Specifies the target format
+                        (e.g. "mp3" or "flv") in case there are multiple
+                        applicable transcodings (since: 1.9.0) You can use
+                        the special value "raw" to disable transcoding
+        timeOffset:int  (since: 1.6.0) Only applicable to video
+                        streaming.  Start the stream at the given
+                        offset (in seconds) into the video
+        size:str        (since: 1.6.0) The requested video size in
+                        WxH, for instance 640x480
+        estimateContentLength:bool  (since: 1.8.0) If set to True,
+                                    the HTTP Content-Length header
+                                    will be set to an estimated
+                                    value for trancoded media
+        converted:bool  (since: 1.14.0) Only applicable to video streaming.
+                        Subsonic can optimize videos for streaming by
+                        converting them to MP4. If a conversion exists for
+                        the video in question, then setting this parameter
+                        to "true" will cause the converted video to be
+                        returned instead of the original.
+
+        Returns the file-like object for reading or raises an exception
+        on error
+        """
+        methodName = 'stream'
+        viewName = '%s.view' % methodName
+
+        q = self._getQueryDict({'id': sid, 'maxBitRate': maxBitRate,
+            'format': tformat, 'timeOffset': timeOffset, 'size': size,
+            'estimateContentLength': estimateContentLength,
+            'converted': converted})
+
+        req = self._getRequest(viewName, q)
+        xbmc.log("Requesting %s"%str(req.full_url),xbmc.LOGDEBUG)
+        res = self._doBinReq(req)
+        if isinstance(res, dict):
+            self._checkStatus(res)
+        return req.full_url
+
+
     def getCoverArt(self, aid, size=None):
         """
         since: 1.0.0
@@ -831,6 +923,30 @@ class Connection(object):
         if isinstance(res, dict):
             self._checkStatus(res)
         return res
+
+    def getCoverArtUrl(self, aid, size=None):
+        """
+        since: 1.0.0
+
+        Returns a cover art image
+
+        aid:str     ID string for the cover art image to download
+        size:int    If specified, scale image to this size
+
+        Returns the file-like object for reading or raises an exception
+        on error
+        """
+        methodName = 'getCoverArt'
+        viewName = '%s.view' % methodName
+
+        q = self._getQueryDict({'id': aid, 'size': size})
+
+        req = self._getRequest(viewName, q)
+        res = self._doBinReq(req)
+        if isinstance(res, dict):
+            self._checkStatus(res)
+        return req.full_url
+
 
     def scrobble(self, sid, submission=True, listenTime=None):
         """
@@ -980,7 +1096,7 @@ class Connection(object):
             streamRole=True, jukeboxRole=False, downloadRole=False,
             uploadRole=False, playlistRole=False, coverArtRole=False,
             commentRole=False, podcastRole=False, shareRole=False,
-            musicFolderId=None):
+            videoConversionRole=False, musicFolderId=None):
         """
         since: 1.1.0
 
@@ -1011,6 +1127,7 @@ class Connection(object):
             'uploadRole': uploadRole, 'playlistRole': playlistRole,
             'coverArtRole': coverArtRole, 'commentRole': commentRole,
             'podcastRole': podcastRole, 'shareRole': shareRole,
+            'videoConversionRole': videoConversionRole,
             'musicFolderId': musicFolderId
         })
 
@@ -1024,7 +1141,7 @@ class Connection(object):
             streamRole=True, jukeboxRole=False, downloadRole=False,
             uploadRole=False, playlistRole=False, coverArtRole=False,
             commentRole=False, podcastRole=False, shareRole=False,
-            musicFolderId=None, maxBitRate=0):
+            videoConversionRole=False, musicFolderId=None, maxBitRate=0):
         """
         since 1.10.1
 
@@ -1056,6 +1173,7 @@ class Connection(object):
             'uploadRole': uploadRole, 'playlistRole': playlistRole,
             'coverArtRole': coverArtRole, 'commentRole': commentRole,
             'podcastRole': podcastRole, 'shareRole': shareRole,
+            'videoConversionRole': videoConversionRole,
             'musicFolderId': musicFolderId, 'maxBitRate': maxBitRate
         })
         req = self._getRequest(viewName, q)
@@ -1960,7 +2078,7 @@ class Connection(object):
         req = self._getRequest(viewName, q)
         try:
             res = self._doBinReq(req)
-        except urllib2.HTTPError:
+        except urllib.error.HTTPError:
             # Avatar is not set/does not exist, return None
             return None
         if isinstance(res, dict):
@@ -2065,7 +2183,7 @@ class Connection(object):
         musicFolderId:int   Only return results from the music folder
                             with the given ID. See getMusicFolders
         """
-        methodName = 'getGenres'
+        methodName = 'getSongsByGenre'
         viewName = '%s.view' % methodName
 
         q = self._getQueryDict({'genre': genre,
@@ -2112,7 +2230,7 @@ class Connection(object):
         req = self._getRequest(viewName, q)
         try:
             res = self._doBinReq(req)
-        except urllib2.HTTPError:
+        except urllib.error.HTTPError:
             # Avatar is not set/does not exist, return None
             return None
         if isinstance(res, dict):
@@ -2220,6 +2338,70 @@ class Connection(object):
         viewName = '%s.view' % methodName
 
         req = self._getRequest(viewName)
+        res = self._doInfoReq(req)
+        self._checkStatus(res)
+        return res
+
+    def createInternetRadioStation(self, streamUrl, name, homepageUrl=None):
+        """
+        since 1.16.0
+
+        Create an internet radio station
+
+        streamUrl:str   The stream URL for the station
+        name:str        The user-defined name for the station
+        homepageUrl:str The homepage URL for the station
+        """
+        methodName = 'createInternetRadioStation'
+        viewName = '{}.view'.format(methodName)
+
+        q = self._getQueryDict({
+            'streamUrl': streamUrl, 'name': name, 'homepageUrl': homepageUrl})
+
+        req = self._getRequest(viewName, q)
+        res = self._doInfoReq(req)
+        self._checkStatus(res)
+        return res
+
+    def updateInternetRadioStation(self, iid, streamUrl, name,
+            homepageUrl=None):
+        """
+        since 1.16.0
+
+        Create an internet radio station
+
+        iid:str         The ID for the station
+        streamUrl:str   The stream URL for the station
+        name:str        The user-defined name for the station
+        homepageUrl:str The homepage URL for the station
+        """
+        methodName = 'updateInternetRadioStation'
+        viewName = '{}.view'.format(methodName)
+
+        q = self._getQueryDict({
+            'id': iid, 'streamUrl': streamUrl, 'name': name,
+            'homepageUrl': homepageUrl,
+        })
+
+        req = self._getRequest(viewName, q)
+        res = self._doInfoReq(req)
+        self._checkStatus(res)
+        return res
+
+    def deleteInternetRadioStation(self, iid):
+        """
+        since 1.16.0
+
+        Create an internet radio station
+
+        iid:str         The ID for the station
+        """
+        methodName = 'deleteInternetRadioStation'
+        viewName = '{}.view'.format(methodName)
+
+        q = {'id': iid}
+
+        req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
@@ -2376,10 +2558,10 @@ class Connection(object):
         position:int        The position, in milliseconds, within the current
                             playing song
 
-        Saves the state of the play queue for this user. This includes 
-        the tracks in the play queue, the currently playing track, and 
-        the position within this track. Typically used to allow a user to 
-        move between different clients/apps while retaining the same play 
+        Saves the state of the play queue for this user. This includes
+        the tracks in the play queue, the currently playing track, and
+        the position within this track. Typically used to allow a user to
+        move between different clients/apps while retaining the same play
         queue (for instance when listening to an audio book).
         """
         methodName = 'savePlayQueue'
@@ -2388,7 +2570,7 @@ class Connection(object):
             qids = [qids]
 
         q = self._getQueryDict({'current': current, 'position': position})
-        
+
         req = self._getRequestWithLists(viewName, {'id': qids}, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
@@ -2398,16 +2580,16 @@ class Connection(object):
         """
         since 1.12.0
 
-        Returns the state of the play queue for this user (as set by 
-        savePlayQueue). This includes the tracks in the play queue, 
-        the currently playing track, and the position within this track. 
-        Typically used to allow a user to move between different 
-        clients/apps while retaining the same play queue (for instance 
+        Returns the state of the play queue for this user (as set by
+        savePlayQueue). This includes the tracks in the play queue,
+        the currently playing track, and the position within this track.
+        Typically used to allow a user to move between different
+        clients/apps while retaining the same play queue (for instance
         when listening to an audio book).
         """
         methodName = 'getPlayQueue'
         viewName = '%s.view' % methodName
-        
+
         req = self._getRequest(viewName)
         res = self._doInfoReq(req)
         self._checkStatus(res)
@@ -2424,9 +2606,9 @@ class Connection(object):
         """
         methodName = 'getTopSongs'
         viewName = '%s.view' % methodName
-        
+
         q = {'artist': artist, 'count': count}
-        
+
         req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
@@ -2442,9 +2624,9 @@ class Connection(object):
         """
         methodName = 'getNewestPodcasts'
         viewName = '%s.view' % methodName
-        
+
         q = {'count': count}
-        
+
         req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
@@ -2561,7 +2743,7 @@ class Connection(object):
 
         url = '%s:%d/%s/%s?%s' % (self._baseUrl, self._port,
             self._separateServerPath(), viewName, methodName)
-        req = urllib2.Request(url)
+        req = urllib.request.Request(url)
         res = self._opener.open(req)
         res_msg = res.msg.lower()
         return res_msg == 'ok'
@@ -2575,14 +2757,17 @@ class Connection(object):
         if sys.version_info[:3] >= (2, 7, 9) and self._insecure:
             https_chain = HTTPSHandlerChain(
                 context=ssl._create_unverified_context())
-        opener = urllib2.build_opener(PysHTTPRedirectHandler, https_chain)
+        opener = urllib.request.build_opener(
+            PysHTTPRedirectHandler,
+            https_chain,
+        )
         return opener
 
     def _getQueryDict(self, d):
         """
         Given a dictionary, it cleans out all the values set to None
         """
-        for k, v in d.items():
+        for k, v in list(d.items()):
             if v is None:
                 del d[k]
         return d
@@ -2599,7 +2784,7 @@ class Connection(object):
             qdict['p'] = 'enc:%s' % self._hexEnc(self._rawPass)
         else:
             salt = self._getSalt()
-            token = md5(self._rawPass + salt).hexdigest()
+            token = md5((self._rawPass + salt).encode('utf-8')).hexdigest()
             qdict.update({
                 's': salt,
                 't': token,
@@ -2612,12 +2797,13 @@ class Connection(object):
         qdict.update(query)
         url = '%s:%d/%s/%s' % (self._baseUrl, self._port, self._serverPath,
             viewName)
-        req = urllib2.Request(url, urlencode(qdict))
-
-        if self._useGET:
+        xbmc.log("Standard URL %s"%url,level=xbmc.LOGDEBUG)
+        xbmc.log("Qdict %s"%str(qdict),level=xbmc.LOGDEBUG)
+        req = urllib.request.Request(url, urlencode(qdict).encode('utf-8'))
+        if(self._useGET or ('getCoverArt' in viewName) or ('stream' in viewName)):
             url += '?%s' % urlencode(qdict)
-            req = urllib2.Request(url)
-
+            xbmc.log("UseGET URL %s"%(url),xbmc.LOGDEBUG)
+            req = urllib.request.Request(url)
         return req
 
     def _getRequestWithList(self, viewName, listName, alist, query={}):
@@ -2633,7 +2819,7 @@ class Connection(object):
         data.write(urlencode(qdict))
         for i in alist:
             data.write('&%s' % urlencode({listName: i}))
-        req = urllib2.Request(url, data.getvalue())
+        req = urllib.request.Request(url, data.getvalue().encode('utf-8'))
 
         if self._useGET:
             url += '?%s' % data.getvalue()
@@ -2657,10 +2843,10 @@ class Connection(object):
             viewName)
         data = StringIO()
         data.write(urlencode(qdict))
-        for k, l in listMap.iteritems():
+        for k, l in listMap.items():
             for i in l:
                 data.write('&%s' % urlencode({k: i}))
-        req = urllib2.Request(url, data.getvalue())
+        req = urllib.request.Request(url, data.getvalue().encode('utf-8'))
 
         if self._useGET:
             url += '?%s' % data.getvalue()
@@ -2671,12 +2857,17 @@ class Connection(object):
     def _doInfoReq(self, req):
         # Returns a parsed dictionary version of the result
         res = self._opener.open(req)
-        dres = json.loads(res.read())
+        dres = json.loads(res.read().decode('utf-8'))
         return dres['subsonic-response']
 
     def _doBinReq(self, req):
         res = self._opener.open(req)
-        contType = res.info().getheader('Content-Type')
+        info = res.info()
+        if hasattr(info, 'getheader'):
+            contType = info.getheader('Content-Type')
+        else:
+            contType = info.get('Content-Type')
+
         if contType:
             if contType.startswith('text/html') or \
                     contType.startswith('application/json'):
@@ -2716,7 +2907,7 @@ class Connection(object):
         """
         separate REST portion of URL from base server path.
         """
-        return urllib2.splithost(self._serverPath)[1].split('/')[0]
+        return urllib.parse.splithost(self._serverPath)[1].split('/')[0]
 
     def _fixLastModified(self, data):
         """
@@ -2726,9 +2917,9 @@ class Connection(object):
         of SECONDS since the unix epoch.  JAVA SUCKS!
         """
         if isinstance(data, dict):
-            for k, v in data.items():
+            for k, v in list(data.items()):
                 if k == 'lastModified':
-                    data[k] = long(v) / 1000.0
+                    data[k] = int(v) / 1000.0
                     return
                 elif isinstance(v, (tuple, list, dict)):
                     return self._fixLastModified(v)
