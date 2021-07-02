@@ -642,9 +642,12 @@ def search(params):
     # Get items
     items = connection.search2(query=d)
     # Iterate through items
-    for item in items.get('searchResult2').get('song'):
-        entry = get_entry_track( item, params)
-        listing.append(entry)
+    try:
+        for item in items.get('searchResult2').get('song'):
+            entry = get_entry_track( item, params)
+           listing.append(entry)
+    except:
+        pass
 
     if len(listing) == 1:
         plugin.log('One single Media Folder found; do return listing from browse_indexes()...')
@@ -1416,25 +1419,31 @@ def walk_playlists():
     """
 
     response = connection.getPlaylists()
-
-    for child in response["playlists"]["playlist"]:
-        yield child
-
+    try:
+        for child in response["playlists"]["playlist"]:
+            yield child
+    except:
+        yield from ()
 
 def walk_playlist(playlist_id):
     """
     Request Subsonic's playlist items and iterate over each item.
     """
     response = connection.getPlaylist(playlist_id)
-
-    for child in response["playlist"]["entry"]:
-        yield child
+    try:
+        for child in response["playlist"]["entry"]:
+            yield child
+    except:
+        yield from ()
 
 def walk_folders():
     response = connection.getMusicFolders()
-    
-    for child in response["musicFolders"]["musicFolder"]:
-        yield child
+    try:    
+        for child in response["musicFolders"]["musicFolder"]:
+            yield child
+    except:
+        yield from ()
+
 
 def walk_directory(directory_id):
     """
