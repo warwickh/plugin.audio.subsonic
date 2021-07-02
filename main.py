@@ -645,7 +645,7 @@ def search(params):
     try:
         for item in items.get('searchResult2').get('song'):
             entry = get_entry_track( item, params)
-           listing.append(entry)
+            listing.append(entry)
     except:
         pass
 
