@@ -1409,45 +1409,50 @@ def walk_index(folder_id=None):
     """
     Request Subsonic's index and iterate each item.
     """
-
     response = connection.getIndexes(folder_id)
+    try:
+        for index in response["indexes"]["index"]:
+            for artist in index["artist"]:
+                yield artist
+    except KeyError:
+        yield from ()            
 
-    for index in response["indexes"]["index"]:
-        for artist in index["artist"]:
-            yield artist
-            
 def walk_playlists():
     """
     Request Subsonic's playlists and iterate over each item.
     """
-
     response = connection.getPlaylists()
-
-    for child in response["playlists"]["playlist"]:
-        yield child
-
+    try:
+        for child in response["playlists"]["playlist"]:
+            yield child
+    except KeyError:
+        yield from ()
 
 def walk_playlist(playlist_id):
     """
     Request Subsonic's playlist items and iterate over each item.
     """
     response = connection.getPlaylist(playlist_id)
-
-    for child in response["playlist"]["entry"]:
-        yield child
+    try:
+        for child in response["playlist"]["entry"]:
+            yield child
+    except KeyError:
+        yield from ()
 
 def walk_folders():
     response = connection.getMusicFolders()
-    
-    for child in response["musicFolders"]["musicFolder"]:
-        yield child
+    try:
+        for child in response["musicFolders"]["musicFolder"]:
+            yield child
+    except KeyError:
+        yield from ()
 
 def walk_directory(directory_id):
     """
     Request a Subsonic music directory and iterate over each item.
     """
     response = connection.getMusicDirectory(directory_id)
-    
+   
     try:
         for child in response["directory"]["child"]:
             if child.get("isDir"):
@@ -1464,32 +1469,36 @@ def walk_artist(artist_id):
     """
 
     response = connection.getArtist(artist_id)
-
-    for child in response["artist"]["album"]:
-        yield child
+    try:
+        for child in response["artist"]["album"]:
+            yield child
+    except KeyError:
+        yield from ()
 
 def walk_artists():
     """
     (ID3 tags)
     Request all artists and iterate over each item.
     """
-
     response = connection.getArtists()
-
-    for index in response["artists"]["index"]:
-        for artist in index["artist"]:
-            yield artist
+    try:
+        for index in response["artists"]["index"]:
+            for artist in index["artist"]:
+                yield artist
+    except KeyError:
+        yield from ()
 
 def walk_genres():
     """
     (ID3 tags)
     Request all genres and iterate over each item.
     """
-
     response = connection.getGenres()
-
-    for genre in response["genres"]["genre"]:
-        yield genre
+    try:
+        for genre in response["genres"]["genre"]:
+            yield genre
+    except KeyError:
+        yield from ()
 
 def walk_albums(ltype, size=None, fromYear=None,toYear=None, genre=None, offset=None):
     """
@@ -1518,34 +1527,35 @@ def walk_album(album_id):
     (ID3 tags)
     Request an album and iterate over each item.
     """
-
     response = connection.getAlbum(album_id)
-
-    for song in response["album"]["song"]:
-        yield song
+    try:
+        for song in response["album"]["song"]:
+            yield song
+    except KeyError:
+        yield from ()
 
 def walk_tracks_random(size=None, genre=None, fromYear=None,toYear=None):
     """
     Request random songs by genre and/or year and iterate over each song.
     """
-
     response = connection.getRandomSongs(
         size=size, genre=genre, fromYear=fromYear, toYear=toYear)
-
-    for song in response["randomSongs"]["song"]:
-        yield song
-        
+    try:
+        for song in response["randomSongs"]["song"]:
+            yield song
+    except KeyError:
+        yield from ()        
 
 def walk_tracks_starred():
     """
     Request Subsonic's starred songs and iterate over each item.
     """
-
     response = connection.getStarred()
-
-    for song in response["starred"]["song"]:
-        yield song
-
+    try:
+        for song in response["starred"]["song"]:
+            yield song
+    except KeyError:
+        yield from ()
 
 # Start plugin from within Kodi.
 if __name__ == "__main__":
