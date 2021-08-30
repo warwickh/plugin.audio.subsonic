@@ -13,6 +13,7 @@ import xbmcplugin
 import xbmcgui
 import json
 import shutil
+import time
 import dateutil.parser
 from datetime import datetime
 from collections import MutableMapping, namedtuple
@@ -34,8 +35,9 @@ plugin = Plugin()
 
 connection = None
 cachetime = int(Addon().get_setting('cachetime'))
-local_starred = set({})
 
+local_starred = set({})
+plugin.log("This is where the local_stars are cleared")
 ListContext = namedtuple('ListContext', ['listing', 'succeeded','update_listing', 'cache_to_disk','sort_methods', 'view_mode','content', 'category'])
 PlayContext = namedtuple('PlayContext', ['path', 'play_item', 'succeeded'])
 def popup(text, time=5000, image=None):
@@ -50,7 +52,7 @@ def get_connection():
     if connection==None:   
         connected = False  
         # Create connection      
-        try:
+        if 1:#try:
             connection = libsonic.Connection(
                 baseUrl=Addon().get_setting('subsonic_url'),
                 username=Addon().get_setting('username', convert=False),
@@ -62,8 +64,8 @@ def get_connection():
                 useGET=Addon().get_setting('useget'),
             )            
             connected = connection.ping()
-        except:
-            pass
+        #except:
+        #    pass
 
         if connected==False:
             popup('Connection error')
@@ -557,7 +559,8 @@ def list_tracks(params):
     #update stars
     if menu_id == 'tracks_starred':
         ids_list = [item.get('id') for item in items]
-        stars_cache_update(ids_list)
+        #stars_local_update(ids_list)
+        cache_refresh(True)
 
     # Iterate through items
     key = 0;
@@ -642,12 +645,9 @@ def search(params):
     # Get items
     items = connection.search2(query=d)
     # Iterate through items
-    try:
-        for item in items.get('searchResult2').get('song'):
-            entry = get_entry_track( item, params)
-            listing.append(entry)
-    except:
-        pass
+    for item in items.get('searchResult2').get('song'):
+        entry = get_entry_track( item, params)
+        listing.append(entry)
 
     if len(listing) == 1:
         plugin.log('One single Media Folder found; do return listing from browse_indexes()...')
@@ -731,7 +731,8 @@ def star_item(params):
             message = Addon().get_localized_string(30032)
             plugin.log('Starred %s #%s' % (type,json.dumps(ids)))
             
-        stars_cache_update(ids,unstar)
+        #stars_local_update(ids,unstar)
+        cache_refresh(True)
        
         popup(message)
             
@@ -804,8 +805,13 @@ def get_entry_playlist(item,params):
 #@plugin.cached(cachetime) #cache (in minutes)
 def get_entry_artist(item,params):
     image = connection.getCoverArtUrl(item.get('coverArt'))
+    #artist_info =  connection.getArtistInfo(item.get('id')).get('artistInfo')
+    #artist_bio = artist_info.get('biography')
+    #xbmc.log("Artist info: %s"%artist_info.get('biography'),xbmc.LOGINFO)
     return {
         'label':    get_starred_label(item.get('id'),item.get('name')),
+	'label2': "test label",
+	'offscreen': True,
         'thumb':    image,
         'fanart':   image,
         'url':      plugin.get_url(
@@ -816,7 +822,11 @@ def get_entry_artist(item,params):
         'info': {
             'music': { ##http://romanvm.github.io/Kodistubs/_autosummary/xbmcgui.html#xbmcgui.ListItem.setInfo
                 'count':    item.get('albumCount'),
-                'artist':   item.get('name')
+                'artist':   item.get('name'),
+		'title':    "testtitle",
+		'album':    "testalbum",
+		'comment':  "testcomment"
+#                'title':    artist_info.get('biography')
             }
         }
     }
@@ -920,7 +930,10 @@ def get_starred_label(id,label):
 
 def is_starred(id):
     starred = stars_cache_get()
-    id = int(id)
+    #plugin.log(starred)
+    #plugin.log("id in starred %s %s"%(id,id in starred))
+    #plugin.log("int(id) in starred %s %s"%(id, int(id) in starred))
+    #id = int(id)
     if id in starred:
         return True
     else:
@@ -1023,49 +1036,39 @@ def get_sort_methods(type,params):
 
     return sortable
     
-
-def stars_cache_update(ids,remove=False):
-
-    #get existing cache set
-    starred = stars_cache_get()
-    
-    #make sure this==a list
-    if not isinstance(ids, list):
-        ids = [ids]
-    
-    #abord if empty
-    if len(ids) == 0:
-        return
-    
-    #parse items
-    for item_id in ids:
-        item_id = int(item_id)
-        if not remove:
-            starred.add(item_id)
-        else:
-            starred.remove(item_id)
-    
-    #store them
+def cache_refresh(forced=False):
+    global local_starred
+    #cachetime = 5
+    last_update = 0
     with plugin.get_storage() as storage:
-        storage['starred_ids'] = starred
-        
-    plugin.log('stars_cache_update:')
-    plugin.log(starred)
-
+        #storage['starred_ids'] = starred
+        try:
+            last_update = storage['updated']
+        except KeyError as e:
+            plugin.log("keyerror, is this a new cache file?")    
+        if(time.time()-(cachetime*60)>last_update) or forced:
+            plugin.log("Cache expired, updating %s %s %s forced %s"%(time.time(),cachetime*60,last_update, forced))
+            generator = walk_tracks_starred()
+            items = list(generator)
+            ids_list = [item.get('id') for item in items]
+            #plugin.log("Retreived from server: %s"%ids_list)
+            storage['starred_ids'] = ids_list
+            storage['updated']=time.time()
+            plugin.log("cache_refresh checking length of load to local %s items"%len(ids_list))
+            local_starred = ids_list
+        else:
+            #plugin.log("Cache fresh %s %s %s forced %s remaining %s"%(time.time(),cachetime*60,last_update, forced, time.time()-(cachetime*60)-last_update))
+            pass
+        if(len(local_starred)==0):
+            local_starred = storage['starred_ids']
+    #plugin.log("cache_refresh returning %s items"%len(local_starred))
+    return       
 
 def stars_cache_get(): #Retrieving stars from cache is too slow, so load to local variable
-    global local_starred    
-    plugin.log(len(local_starred))   
-    if(len(local_starred)>0):
-        plugin.log('stars already loaded:')
-        plugin.log(local_starred)        
-        return(local_starred)
-    else:
-        with plugin.get_storage() as storage:
-            local_starred = storage.get('starred_ids',set())
-            plugin.log('stars_cache_get:')
-            plugin.log(local_starred)
-            return local_starred
+    global local_starred
+    cache_refresh()    
+    #plugin.log("stars_cache_get returning %s items"%len(local_starred))
+    return local_starred
 
 def navigate_next(params):
   
@@ -1419,31 +1422,25 @@ def walk_playlists():
     """
 
     response = connection.getPlaylists()
-    try:
-        for child in response["playlists"]["playlist"]:
-            yield child
-    except:
-        yield from ()
+
+    for child in response["playlists"]["playlist"]:
+        yield child
+
 
 def walk_playlist(playlist_id):
     """
     Request Subsonic's playlist items and iterate over each item.
     """
     response = connection.getPlaylist(playlist_id)
-    try:
-        for child in response["playlist"]["entry"]:
-            yield child
-    except:
-        yield from ()
+
+    for child in response["playlist"]["entry"]:
+        yield child
 
 def walk_folders():
     response = connection.getMusicFolders()
-    try:    
-        for child in response["musicFolders"]["musicFolder"]:
-            yield child
-    except:
-        yield from ()
-
+    
+    for child in response["musicFolders"]["musicFolder"]:
+        yield child
 
 def walk_directory(directory_id):
     """

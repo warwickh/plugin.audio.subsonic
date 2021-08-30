@@ -942,9 +942,9 @@ class Connection(object):
         q = self._getQueryDict({'id': aid, 'size': size})
 
         req = self._getRequest(viewName, q)
-        res = self._doBinReq(req)
-        if isinstance(res, dict):
-            self._checkStatus(res)
+        #res = self._doBinReq(req)
+        #if isinstance(res, dict):
+        #    self._checkStatus(res)
         return req.full_url
 
 
@@ -2672,7 +2672,8 @@ class Connection(object):
         methodName = 'getVideoInfo'
         viewName = '%s.view' % methodName
 
-        q = {'id': int(vid)}
+        #q = {'id': int(vid)}
+        q = {'id': vid}
         req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
@@ -2689,7 +2690,8 @@ class Connection(object):
         methodName = 'getAlbumInfo'
         viewName = '%s.view' % methodName
 
-        q = {'id': int(aid)}
+        #q = {'id': int(aid)}
+        q = {'id': aid}
         req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
@@ -2706,7 +2708,8 @@ class Connection(object):
         methodName = 'getAlbumInfo2'
         viewName = '%s.view' % methodName
 
-        q = {'id': int(aid)}
+        #q = {'id': int(aid)}
+        q = {'id': aid}
         req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
@@ -2725,7 +2728,8 @@ class Connection(object):
         methodName = 'getCaptions'
         viewName = '%s.view' % methodName
 
-        q = self._getQueryDict({'id': int(vid), 'format': fmt})
+        #q = self._getQueryDict({'id': int(vid), 'format': fmt})
+        q = self._getQueryDict({'id': vid, 'format': fmt})
         req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
         self._checkStatus(res)
@@ -2797,12 +2801,12 @@ class Connection(object):
         qdict.update(query)
         url = '%s:%d/%s/%s' % (self._baseUrl, self._port, self._serverPath,
             viewName)
-        xbmc.log("Standard URL %s"%url,level=xbmc.LOGDEBUG)
-        xbmc.log("Qdict %s"%str(qdict),level=xbmc.LOGDEBUG)
+        #xbmc.log("Standard URL %s"%url,level=xbmc.LOGDEBUG)
+        #xbmc.log("Qdict %s"%str(qdict),level=xbmc.LOGDEBUG)
         req = urllib.request.Request(url, urlencode(qdict).encode('utf-8'))
         if(self._useGET or ('getCoverArt' in viewName) or ('stream' in viewName)):
             url += '?%s' % urlencode(qdict)
-            xbmc.log("UseGET URL %s"%(url),xbmc.LOGDEBUG)
+            #xbmc.log("UseGET URL %s"%(url),xbmc.LOGDEBUG)
             req = urllib.request.Request(url)
         return req
 
