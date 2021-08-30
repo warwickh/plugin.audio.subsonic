@@ -15,6 +15,7 @@ Leia compatible version available in alternate branch
 * Browse by artist, albums (newest/most played/recently played/random), tracks (starred/random), and playlists
 * Download songs
 * Star songs
+* Navidrome compatibility added (please report any issues)
 
 ## Installation
 * Click the code button and download
