@@ -1,11 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Module: main
-# Author: G.Breant
-# Created on: 14 January 2017
-# License: GPL v.3 https://www.gnu.org/copyleft/gpl.html
-
 import xbmcvfs
 import os
 import xbmcaddon
@@ -22,8 +17,7 @@ from collections import namedtuple
 # Add the /lib folder to sys
 sys.path.append(xbmcvfs.translatePath(os.path.join(xbmcaddon.Addon("plugin.audio.subsonic").getAddonInfo("path"), "lib")))
 
-
-import libsonic#Removed libsonic_extra
+import libsonic
 
 from simpleplugin import Plugin
 from simpleplugin import Addon
@@ -31,14 +25,10 @@ from simpleplugin import Addon
 # Create plugin instance
 plugin = Plugin()
 
-# initialize_gettext
-#_ = plugin.initialize_gettext()
-
 connection = None
 cachetime = int(Addon().get_setting('cachetime'))
 
 local_starred = set({})
-plugin.log("This is where the local_stars are cleared")
 ListContext = namedtuple('ListContext', ['listing', 'succeeded','update_listing', 'cache_to_disk','sort_methods', 'view_mode','content', 'category'])
 PlayContext = namedtuple('PlayContext', ['path', 'play_item', 'succeeded'])
 def popup(text, time=5000, image=None):
@@ -138,12 +128,7 @@ def root(params):
 
     add_directory_items(create_listing(
         listing,
-        #succeeded = True, #if False Kodi won’t open a new listing and stays on the current level.
-        #update_listing = False, #if True, Kodi won’t open a sub-listing but refresh the current one. 
-        #cache_to_disk = True, #cache this view to disk.
-        sort_methods = None, #he list of integer constants representing virtual folder sort methods.
-        #view_mode = None, #a numeric code for a skin view mode. View mode codes are different in different skins except for 50 (basic listing).
-        #content = None #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
+        sort_methods = None,
     ))
 
 @plugin.action()
@@ -180,7 +165,7 @@ def menu_albums(params):
         }
     }
 
-    # Iterate through categories
+    # Iterate through albums
 
     for menu_id in menus:
         
@@ -204,12 +189,6 @@ def menu_albums(params):
 
     add_directory_items(create_listing(
         listing,
-        #succeeded = True, #if False Kodi won’t open a new listing and stays on the current level.
-        #update_listing = False, #if True, Kodi won’t open a sub-listing but refresh the current one. 
-        #cache_to_disk = True, #cache this view to disk.
-        #sort_methods = None, #he list of integer constants representing virtual folder sort methods.
-        #view_mode = None, #a numeric code for a skin view mode. View mode codes are different in different skins except for 50 (basic listing).
-        #content = None #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
     ))
 
 @plugin.action()
@@ -256,12 +235,6 @@ def menu_tracks(params):
 
     add_directory_items(create_listing(
         listing,
-        #succeeded = True, #if False Kodi won’t open a new listing and stays on the current level.
-        #update_listing = False, #if True, Kodi won’t open a sub-listing but refresh the current one. 
-        #cache_to_disk = True, #cache this view to disk.
-        #sort_methods = None, #he list of integer constants representing virtual folder sort methods.
-        #view_mode = None, #a numeric code for a skin view mode. View mode codes are different in different skins except for 50 (basic listing).
-        #content = None #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
     ))
 
 @plugin.action()
@@ -298,7 +271,6 @@ def browse_folders(params):
         add_directory_items(create_listing(listing))
 
 @plugin.action()
-#@plugin.cached(cachetime) # cache (in minutes)
 def browse_indexes(params):
     # get connection
     connection = get_connection()
@@ -330,7 +302,6 @@ def browse_indexes(params):
     ))
 
 @plugin.action()
-#@plugin.cached(cachetime) # cache (in minutes)
 def list_directory(params):
     # get connection
     connection = get_connection()
@@ -368,7 +339,6 @@ def list_directory(params):
     ))
 
 @plugin.action()
-#@plugin.cached(cachetime) # cache (in minutes)
 def browse_library(params):
     """
     List artists from the library (ID3 tags)
@@ -403,11 +373,8 @@ def browse_library(params):
  
     add_directory_items(create_listing(
         listing,
-        #succeeded = True, #if False Kodi won’t open a new listing and stays on the current level.
-        #update_listing = False, #if True, Kodi won’t open a sub-listing but refresh the current one. 
         cache_to_disk = True, #cache this view to disk.
         sort_methods = get_sort_methods('artists',params), #he list of integer constants representing virtual folder sort methods.
-        #view_mode = None, #a numeric code for a skin view mode. View mode codes are different in different skins except for 50 (basic listing).
         content = 'artists' #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
     ))
 
@@ -480,11 +447,8 @@ def list_albums(params):
 
     add_directory_items(create_listing(
         listing,
-        #succeeded = True, #if False Kodi won’t open a new listing and stays on the current level.
-        #update_listing = False, #if True, Kodi won’t open a sub-listing but refresh the current one. 
         cache_to_disk = True, #cache this view to disk.
         sort_methods = get_sort_methods('albums',params), 
-        #view_mode = None, #a numeric code for a skin view mode. View mode codes are different in different skins except for 50 (basic listing).
         content = 'albums' #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
     ))
 
@@ -579,15 +543,9 @@ def list_tracks(params):
     #link_next = navigate_next(params)
     #listing.append(link_next)
 
-
-
     add_directory_items(create_listing(
         listing,
-        #succeeded =        True, #if False Kodi won’t open a new listing and stays on the current level.
-        #update_listing =   False, #if True, Kodi won’t open a sub-listing but refresh the current one. 
-        #cache_to_disk =    True, #cache this view to disk.
         sort_methods=       get_sort_methods('tracks',params),
-        #view_mode =        None, #a numeric code for a skin view mode. View mode codes are different in different skins except for 50 (basic listing).
         content =           'songs' #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
     ))
 
@@ -595,8 +553,8 @@ def list_tracks(params):
 #run this function every time we get starred items.
 #ids can be a single ID or a list
 #using a set makes sure that IDs will be unique.
+
 @plugin.action()
-#@plugin.cached(cachetime) #cache (in minutes)
 def list_playlists(params):
     
     # get connection
@@ -618,12 +576,7 @@ def list_playlists(params):
         
     add_directory_items(create_listing(
         listing,
-        #succeeded = True, #if False Kodi won’t open a new listing and stays on the current level.
-        #update_listing = False, #if True, Kodi won’t open a sub-listing but refresh the current one. 
-        #cache_to_disk = True, #cache this view to disk.
         sort_methods = get_sort_methods('playlists',params), #he list of integer constants representing virtual folder sort methods.
-        #view_mode = None, #a numeric code for a skin view mode. View mode codes are different in different skins except for 50 (basic listing).
-        #content = None #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
     ))
 @plugin.action()
 #@plugin.cached(cachetime) #cache (in minutes)
@@ -875,7 +828,6 @@ def get_entry_album(item, params):
 
     return entry
 
-#@plugin.cached(cachetime) #cache (in minutes)
 def get_entry_track(item,params):
     
     menu_id = params.get('menu_id')
@@ -923,7 +875,6 @@ def get_entry_track(item,params):
 
     return entry
 
-#@plugin.cached(cachetime) #cache (in minutes)
 def get_starred_label(id,label):
     if is_starred(id):
         label = '[COLOR=FF00FF00]%s[/COLOR]' % label
@@ -931,16 +882,12 @@ def get_starred_label(id,label):
 
 def is_starred(id):
     starred = stars_cache_get()
-    #plugin.log(starred)
-    #plugin.log("id in starred %s %s"%(id,id in starred))
-    #plugin.log("int(id) in starred %s %s"%(id, int(id) in starred))
     #id = int(id)
     if id in starred:
         return True
     else:
         return False
 
-#@plugin.cached(cachetime) #cache (in minutes)
 def get_entry_track_label(item,hide_artist = False):
     if hide_artist:
         label = item.get('title', '<Unknown>')
@@ -952,7 +899,6 @@ def get_entry_track_label(item,hide_artist = False):
 
     return get_starred_label(item.get('id'),label)
 
-#@plugin.cached(cachetime) #cache (in minutes)
 def get_entry_album_label(item,hide_artist = False):
     if hide_artist:
         label = item.get('name', '<Unknown>')
@@ -961,7 +907,6 @@ def get_entry_album_label(item,hide_artist = False):
                              item.get('name', '<Unknown>'))
     return get_starred_label(item.get('id'),label)
 
-#@plugin.cached(cachetime) #cache (in minutes)
 def get_sort_methods(type,params):
     #sort method for list types
     #https://github.com/xbmc/xbmc/blob/master/xbmc/SortFileItem.h
@@ -1065,10 +1010,9 @@ def cache_refresh(forced=False):
     #plugin.log("cache_refresh returning %s items"%len(local_starred))
     return       
 
-def stars_cache_get(): #Retrieving stars from cache is too slow, so load to local variable
+def stars_cache_get():
     global local_starred
     cache_refresh()    
-    #plugin.log("stars_cache_get returning %s items"%len(local_starred))
     return local_starred
 
 def navigate_next(params):
@@ -1277,10 +1221,8 @@ def download_album(id):
 
     download_tracks(ids)
 
-#@plugin.cached(cachetime) #cache (in minutes)
 def create_listing(listing, succeeded=True, update_listing=False, cache_to_disk=False, sort_methods=None,view_mode=None, content=None, category=None):
         return ListContext(listing, succeeded, update_listing, cache_to_disk,sort_methods, view_mode, content, category)
-
 
 def resolve_url(path='', play_item=None, succeeded=True):
     """
@@ -1300,7 +1242,6 @@ def resolve_url(path='', play_item=None, succeeded=True):
     """
     return PlayContext(path, play_item, succeeded)
 
-#@plugin.cached(cachetime) #cache (in minutes)
 def create_list_item(item):
     """
     Create an :class:`xbmcgui.ListItem` instance from an item dict
@@ -1365,7 +1306,6 @@ def _set_resolved_url(context):
     xbmcplugin.setResolvedUrl(plugin.handle, context.succeeded, list_item)
 
 
-#@plugin.cached(cachetime) #cache (in minutes)
 def add_directory_items(context):
     plugin.log_debug('Creating listing from {0}'.format(str(context)))
     if context.category is not None:

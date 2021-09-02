@@ -1,5 +1,5 @@
 # Subsonic
-Kodi plugin to stream, star and download music from Subsonic.
+Kodi plugin to stream, star and download music from Subsonic/Airsonic/Navidrome (requires Subsonic API compatibility)
 
 For feature requests / issues:
 https://github.com/warwickh/plugin.audio.subsonic/issues
@@ -27,7 +27,7 @@ or
 * Clone this repository: `git clone https://github.com/warwickh/plugin.audio.subsonic.git`
 * (Re)start Kodi.
 
-Note: You may need to install dependencies manually if installing this way
+Note: You may need to install dependencies manually if installing this way. I recommend installing from zip first, then updating using git clone
 
 ## TODO
 * Scrobble to Last.FM (http://forum.kodi.tv/showthread.php?tid=195597&pid=2429362#pid2429362)
