@@ -16,7 +16,8 @@ import shutil
 import time
 import dateutil.parser
 from datetime import datetime
-from collections import MutableMapping, namedtuple
+from collections.abc import MutableMapping
+from collections import namedtuple
 
 # Add the /lib folder to sys
 sys.path.append(xbmcvfs.translatePath(os.path.join(xbmcaddon.Addon("plugin.audio.subsonic").getAddonInfo("path"), "lib")))
@@ -52,7 +53,7 @@ def get_connection():
     if connection==None:   
         connected = False  
         # Create connection      
-        if 1:#try:
+        try:
             connection = libsonic.Connection(
                 baseUrl=Addon().get_setting('subsonic_url'),
                 username=Addon().get_setting('username', convert=False),
@@ -64,8 +65,8 @@ def get_connection():
                 useGET=Addon().get_setting('useget'),
             )            
             connected = connection.ping()
-        #except:
-        #    pass
+        except:
+            pass
 
         if connected==False:
             popup('Connection error')
@@ -822,10 +823,10 @@ def get_entry_artist(item,params):
         'info': {
             'music': { ##http://romanvm.github.io/Kodistubs/_autosummary/xbmcgui.html#xbmcgui.ListItem.setInfo
                 'count':    item.get('albumCount'),
-                'artist':   item.get('name'),
-		'title':    "testtitle",
-		'album':    "testalbum",
-		'comment':  "testcomment"
+                'artist':   item.get('name')#,
+		#'title':    "testtitle",
+		#'album':    "testalbum",
+		#'comment':  "testcomment"
 #                'title':    artist_info.get('biography')
             }
         }

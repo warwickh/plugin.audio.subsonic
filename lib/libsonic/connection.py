@@ -895,9 +895,9 @@ class Connection(object):
 
         req = self._getRequest(viewName, q)
         xbmc.log("Requesting %s"%str(req.full_url),xbmc.LOGDEBUG)
-        res = self._doBinReq(req)
-        if isinstance(res, dict):
-            self._checkStatus(res)
+        #res = self._doBinReq(req)
+        #if isinstance(res, dict):
+        #    self._checkStatus(res)
         return req.full_url
 
 
@@ -942,6 +942,7 @@ class Connection(object):
         q = self._getQueryDict({'id': aid, 'size': size})
 
         req = self._getRequest(viewName, q)
+        xbmc.log("Requesting %s"%str(req.full_url),xbmc.LOGDEBUG)
         #res = self._doBinReq(req)
         #if isinstance(res, dict):
         #    self._checkStatus(res)
@@ -1992,6 +1993,7 @@ class Connection(object):
             q['musicFolderId'] = musicFolderId
 
         req = self._getRequest(viewName, q)
+        xbmc.log("Requesting %s"%str(req.full_url),xbmc.LOGDEBUG)        
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
