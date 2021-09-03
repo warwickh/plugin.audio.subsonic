@@ -29,7 +29,8 @@ or
 
 Note: You may need to install dependencies manually if installing this way. I recommend installing from zip first, then updating using git clone
 
-[Repository installation file [repository.warwickh-0.9.0.zip]](https://github.com/warwickh/repository.warwickh/raw/master/matrix/zips/repository.warwickh/repository.warwickh-0.9.0.zip)
+Repository installation now available
+[Repository installation file [repository.warwickh-0.9.0.zip]](https://github.com/warwickh/repository.warwickh/raw/master/matrix/zips/repository.warwickh/repository.warwickh-0.9.0.zip) (Please report any issues)
 
 ## TODO
 * Scrobble to Last.FM (http://forum.kodi.tv/showthread.php?tid=195597&pid=2429362#pid2429362)
