@@ -77,7 +77,7 @@ msgid "Cache (in minutes)"
 msgstr ""
 
 msgctxt "#30018"
-msgid "Cache datas time"
+msgid "Cache data time"
 msgstr ""
 
 msgctxt "#30019"
