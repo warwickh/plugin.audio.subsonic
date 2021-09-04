@@ -2485,6 +2485,8 @@ class Connection(object):
 
         req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
+        print(req.get_full_url())
+        print(res)
         self._checkStatus(res)
         return res
 

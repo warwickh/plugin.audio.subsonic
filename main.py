@@ -10,6 +10,8 @@ import json
 import shutil
 import time
 import dateutil.parser
+import hashlib
+import random
 from datetime import datetime
 from collections.abc import MutableMapping
 from collections import namedtuple
@@ -755,12 +757,42 @@ def get_entry_playlist(item,params):
         }}
     }
 
+def get_artist_info(artist_id, forced=False):
+    print("Getting artist info for id: %s"%(artist_id))
+    popup("Getting artist info\nplease wait")
+    last_update = 0
+    artist_info = {}
+    cache_file = '%s'%hashlib.md5(artist_id.encode('utf-8')).hexdigest()
+    with plugin.get_storage(cache_file) as storage:
+        try:
+            last_update = storage['updated']
+        except KeyError as e:
+            plugin.log("Artist keyerror, is this a new cache file? %s"%cache_file)    
+        if(time.time()-last_update>(random.randint(1,11)*360) or forced):
+            plugin.log("Artist cache expired, updating %s %s %s forced %s"%(time.time(),(random.randint(1,11)*360),last_update, forced))
+            try:
+                artist_info = connection.getArtistInfo2(artist_id).get('artistInfo2')
+                #.get('artistInfo')
+                storage['artist_info'] = artist_info
+                storage['updated']=time.time()
+            except AttributeError as e:
+                plugin.log("Attribute error, probably couldn't find any info")
+        else:
+            print("Cache ok for %s retrieving"%artist_id)
+            artist_info = storage['artist_info']
+    print(artist_info)
+    return artist_info
+    #artist_info =  connection.getArtistInfo(item.get('id')).get('artistInfo')
+    #artist_bio = artist_info.get('biography')
+    #xbmc.log("Artist info: %s"%artist_info.get('biography'),xbmc.LOGINFO)
+
+
 #star (or unstar) an item
 #@plugin.cached(cachetime) #cache (in minutes)
 def get_entry_artist(item,params):
     image = connection.getCoverArtUrl(item.get('coverArt'))
-    #artist_info =  connection.getArtistInfo(item.get('id')).get('artistInfo')
-    #artist_bio = artist_info.get('biography')
+    artist_info = get_artist_info(item.get('id'))
+    artist_bio = artist_info.get('biography')
     #xbmc.log("Artist info: %s"%artist_info.get('biography'),xbmc.LOGINFO)
     return {
         'label':    get_starred_label(item.get('id'),item.get('name')),
@@ -776,11 +808,11 @@ def get_entry_artist(item,params):
         'info': {
             'music': { ##http://romanvm.github.io/Kodistubs/_autosummary/xbmcgui.html#xbmcgui.ListItem.setInfo
                 'count':    item.get('albumCount'),
-                'artist':   item.get('name')#,
+                'artist':   item.get('name'),
 		#'title':    "testtitle",
 		#'album':    "testalbum",
 		#'comment':  "testcomment"
-#                'title':    artist_info.get('biography')
+                'title':    artist_info
             }
         }
     }
@@ -1401,7 +1433,7 @@ def walk_directory(directory_id):
                     yield child
             else:
                 yield child
-    except:
+    except KeyError:
         yield from ()
 
 def walk_artist(artist_id):
