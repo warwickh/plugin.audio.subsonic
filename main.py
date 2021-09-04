@@ -762,7 +762,7 @@ def get_artist_info(artist_id, forced=False):
     popup("Getting artist info\nplease wait")
     last_update = 0
     artist_info = {}
-    cache_file = '%s'%hashlib.md5(artist_id.encode('utf-8')).hexdigest()
+    cache_file = 'ar-%s'%hashlib.md5(artist_id.encode('utf-8')).hexdigest()
     with plugin.get_storage(cache_file) as storage:
         try:
             last_update = storage['updated']
@@ -793,13 +793,15 @@ def get_entry_artist(item,params):
     image = connection.getCoverArtUrl(item.get('coverArt'))
     artist_info = get_artist_info(item.get('id'))
     artist_bio = artist_info.get('biography')
+    #fanart = artist_info.get('largeImageUrl')
+    fanart = image
     #xbmc.log("Artist info: %s"%artist_info.get('biography'),xbmc.LOGINFO)
     return {
         'label':    get_starred_label(item.get('id'),item.get('name')),
 	'label2': "test label",
 	'offscreen': True,
         'thumb':    image,
-        'fanart':   image,
+        'fanart':   fanart,
         'url':      plugin.get_url(
                         action=     'list_albums',
                         artist_id=  item.get('id'),
@@ -812,7 +814,7 @@ def get_entry_artist(item,params):
 		#'title':    "testtitle",
 		#'album':    "testalbum",
 		#'comment':  "testcomment"
-                'title':    artist_info
+                'title':    artist_bio
             }
         }
     }
