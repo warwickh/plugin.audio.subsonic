@@ -240,7 +240,6 @@ def menu_tracks(params):
     ))
 
 @plugin.action()
-#@plugin.cached(cachetime) # cache (in minutes)
 def browse_folders(params):
     # get connection
     connection = get_connection()
@@ -307,6 +306,7 @@ def browse_indexes(params):
 def list_directory(params):
     # get connection
     connection = get_connection()
+    merge_artist = Addon().get_setting('merge')
     
     if connection==False:
         return
@@ -315,7 +315,7 @@ def list_directory(params):
     
     # Get items
     id = params.get('id')
-    items = walk_directory(id)
+    items = walk_directory(id, merge_artist)
 
     # Iterate through items
     for item in items:
@@ -381,7 +381,6 @@ def browse_library(params):
     ))
 
 @plugin.action()
-#@plugin.cached(cachetime) #cache (in minutes)
 def list_albums(params):
     
     """
@@ -455,7 +454,6 @@ def list_albums(params):
     ))
 
 @plugin.action()
-#@plugin.cached(cachetime) #cache (in minutes)
 def list_tracks(params):
     
     menu_id = params.get('menu_id')
@@ -761,7 +759,7 @@ def get_artist_info(artist_id, forced=False):
         except KeyError as e:
             plugin.log("Artist keyerror, is this a new cache file? %s"%cache_file)    
         if(time.time()-last_update>(random.randint(1,111)*360) or forced):
-            plugin.log("Artist cache expired, updating %s elapsed vs random %s forced %s"%(time.time()-last_update,(random.randint(1,111)*3600), forced))
+            plugin.log("Artist cache expired, updating %s elapsed vs random %s forced %s"%(int(time.time()-last_update),(random.randint(1,111)*3600), forced))
             try:
                 artist_info = connection.getArtistInfo2(artist_id).get('artistInfo2')
                 storage['artist_info'] = artist_info
@@ -1312,7 +1310,6 @@ def create_list_item(item):
     return list_item
 
 def _set_resolved_url(context):
-
     plugin.log_debug('Resolving URL from {0}'.format(str(context)))
     if context.play_item==None:
         list_item = xbmcgui.ListItem(path=context.path)
@@ -1366,9 +1363,11 @@ def walk_index(folder_id=None):
     Request Subsonic's index and iterate each item.
     """
     response = connection.getIndexes(folder_id)
+    plugin.log("Walk index resp: %s"%response)
     try:
         for index in response["indexes"]["index"]:
             for artist in index["artist"]:
+                plugin.log("artist: %s"%artist)
                 yield artist
     except KeyError:
         yield from ()            
@@ -1403,7 +1402,7 @@ def walk_folders():
     except KeyError:
         yield from ()
 
-def walk_directory(directory_id):
+def walk_directory(directory_id, merge_artist = True):
     """
     Request a Subsonic music directory and iterate over each item.
     """
@@ -1411,8 +1410,8 @@ def walk_directory(directory_id):
    
     try:
         for child in response["directory"]["child"]:
-            if child.get("isDir"):
-                for child in walk_directory(child["id"]):
+            if merge_artist and child.get("isDir"):
+                for child in walk_directory(child["id"], merge_artist):
                     yield child
             else:
                 yield child

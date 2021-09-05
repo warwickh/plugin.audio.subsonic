@@ -168,3 +168,6 @@ msgctxt "#30042"
 msgid "port"
 msgstr ""
 
+msgctxt "#30043"
+msgid "Merge album folders"
+msgstr ""

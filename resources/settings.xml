@@ -25,7 +25,8 @@
 		<setting label="30040" id="useget" type="bool"  default="true" />
 		<setting label="30041" id="legacyauth" type="bool" default="false" />
         <setting label="30017" type="lsep" />
-        <setting label="30018" id="cachetime" type="labelenum"  default="15" values="1|5|15|30|60|120|180|720|1440"/>
+        <setting label="30018" id="cachetime" type="labelenum"  default="3600" values="1|5|15|30|60|120|180|720|1440|3600"/>
+        <setting label="30043" id="merge" type="bool" default="false" />
 		
 	</category>
 </settings>
