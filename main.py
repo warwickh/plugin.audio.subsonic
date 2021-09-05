@@ -551,11 +551,6 @@ def list_tracks(params):
         content =           'songs' #string - current plugin content, e.g. ‘movies’ or ‘episodes’.
     ))
 
-#stars (persistent) cache==used to know what context action (star/unstar) we should display.
-#run this function every time we get starred items.
-#ids can be a single ID or a list
-#using a set makes sure that IDs will be unique.
-
 @plugin.action()
 def list_playlists(params):
     
@@ -580,8 +575,8 @@ def list_playlists(params):
         listing,
         sort_methods = get_sort_methods('playlists',params), #he list of integer constants representing virtual folder sort methods.
     ))
+
 @plugin.action()
-#@plugin.cached(cachetime) #cache (in minutes)
 def search(params):
 
     dialog = xbmcgui.Dialog()
@@ -610,7 +605,6 @@ def search(params):
         return browse_indexes(params)
     else:
         add_directory_items(create_listing(listing))
-
 
 
 @plugin.action()
@@ -704,7 +698,6 @@ def star_item(params):
     #return did_action
     return    
 
-        
 @plugin.action()
 def download_item(params):
 
@@ -736,7 +729,6 @@ def download_item(params):
 
     return did_action
 
-#@plugin.cached(cachetime) #cache (in minutes)    
 def get_entry_playlist(item,params):
     image = connection.getCoverArtUrl(item.get('coverArt'))
     return {
@@ -758,8 +750,8 @@ def get_entry_playlist(item,params):
     }
 
 def get_artist_info(artist_id, forced=False):
-    print("Getting artist info for id: %s"%(artist_id))
-    popup("Getting artist info\nplease wait")
+    print("Updating artist info for id: %s"%(artist_id))
+    popup("Updating artist info\nplease wait")
     last_update = 0
     artist_info = {}
     cache_file = 'ar-%s'%hashlib.md5(artist_id.encode('utf-8')).hexdigest()
@@ -768,11 +760,10 @@ def get_artist_info(artist_id, forced=False):
             last_update = storage['updated']
         except KeyError as e:
             plugin.log("Artist keyerror, is this a new cache file? %s"%cache_file)    
-        if(time.time()-last_update>(random.randint(1,11)*360) or forced):
-            plugin.log("Artist cache expired, updating %s %s %s forced %s"%(time.time(),(random.randint(1,11)*360),last_update, forced))
+        if(time.time()-last_update>(random.randint(1,111)*360) or forced):
+            plugin.log("Artist cache expired, updating %s elapsed vs random %s forced %s"%(time.time()-last_update,(random.randint(1,111)*3600), forced))
             try:
                 artist_info = connection.getArtistInfo2(artist_id).get('artistInfo2')
-                #.get('artistInfo')
                 storage['artist_info'] = artist_info
                 storage['updated']=time.time()
             except AttributeError as e:
@@ -780,22 +771,14 @@ def get_artist_info(artist_id, forced=False):
         else:
             print("Cache ok for %s retrieving"%artist_id)
             artist_info = storage['artist_info']
-    print(artist_info)
     return artist_info
-    #artist_info =  connection.getArtistInfo(item.get('id')).get('artistInfo')
-    #artist_bio = artist_info.get('biography')
-    #xbmc.log("Artist info: %s"%artist_info.get('biography'),xbmc.LOGINFO)
 
-
-#star (or unstar) an item
-#@plugin.cached(cachetime) #cache (in minutes)
 def get_entry_artist(item,params):
     image = connection.getCoverArtUrl(item.get('coverArt'))
-    artist_info = get_artist_info(item.get('id'))
-    artist_bio = artist_info.get('biography')
+    #artist_info = get_artist_info(item.get('id'))
+    #artist_bio = artist_info.get('biography')
     #fanart = artist_info.get('largeImageUrl')
     fanart = image
-    #xbmc.log("Artist info: %s"%artist_info.get('biography'),xbmc.LOGINFO)
     return {
         'label':    get_starred_label(item.get('id'),item.get('name')),
 	'label2': "test label",
@@ -811,15 +794,14 @@ def get_entry_artist(item,params):
             'music': { ##http://romanvm.github.io/Kodistubs/_autosummary/xbmcgui.html#xbmcgui.ListItem.setInfo
                 'count':    item.get('albumCount'),
                 'artist':   item.get('name'),
-		#'title':    "testtitle",
-		#'album':    "testalbum",
-		#'comment':  "testcomment"
-                'title':    artist_bio
+		        #'title':    "testtitle",
+		        #'album':    "testalbum",
+		        #'comment':  "testcomment"
+                #'title':    artist_bio
             }
         }
     }
 
-#@plugin.cached(cachetime) #cache (in minutes)
 def get_entry_album(item, params):
     
     image = connection.getCoverArtUrl(item.get('coverArt'))
@@ -863,7 +845,6 @@ def get_entry_album(item, params):
     return entry
 
 def get_entry_track(item,params):
-    
     menu_id = params.get('menu_id')
     image = connection.getCoverArtUrl(item.get('coverArt'))
 
