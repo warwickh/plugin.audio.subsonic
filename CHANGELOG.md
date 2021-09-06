@@ -1,5 +1,9 @@
 # Changelog
 
+## v3.0.1
+Released 2nd September 2021 (by warwickh)
+* Added Navidrome compatibility (remove dependency on integer ids)
+
 ## v3.0.0
 Released 29th June 2021 (by warwickh)
 * Basic update to provide Matrix compatility. Not tested on Kodi below v19
