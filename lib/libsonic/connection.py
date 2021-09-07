@@ -47,14 +47,14 @@ class HTTPSConnectionChain(http_client.HTTPSConnection):
     def connect(self):
         sock = self._create_sock()
         try:
-            self.sock = ssl.create_default_context().wrap_socket(sock,
+            self.sock = self._context.wrap_socket(sock,
                 server_hostname=self.host)
         except:
             sock.close()
 
 class HTTPSHandlerChain(urllib.request.HTTPSHandler):
     def https_open(self, req):
-        return self.do_open(HTTPSConnectionChain, req)
+        return self.do_open(HTTPSConnectionChain, req, context=self._context)
 
 # install opener
 urllib.request.install_opener(urllib.request.build_opener(HTTPSHandlerChain()))
@@ -894,11 +894,12 @@ class Connection(object):
             'converted': converted})
 
         req = self._getRequest(viewName, q)
-        xbmc.log("Requesting %s"%str(req.full_url),xbmc.LOGDEBUG)
-        #res = self._doBinReq(req)
-        #if isinstance(res, dict):
-        #    self._checkStatus(res)
-        return req.full_url
+        #xbmc.log("Requesting %s"%str(req.full_url),xbmc.LOGDEBUG)
+        return_url = req.full_url
+        if self._insecure:
+            return_url += '|verifypeer=false'
+            xbmc.log("Request is insecure %s"%return_url,level=xbmc.LOGDEBUG)   
+        return return_url
 
 
     def getCoverArt(self, aid, size=None):
@@ -942,11 +943,12 @@ class Connection(object):
         q = self._getQueryDict({'id': aid, 'size': size})
 
         req = self._getRequest(viewName, q)
-        xbmc.log("Requesting %s"%str(req.full_url),xbmc.LOGDEBUG)
-        #res = self._doBinReq(req)
-        #if isinstance(res, dict):
-        #    self._checkStatus(res)
-        return req.full_url
+        #xbmc.log("Requesting %s"%str(req.full_url),xbmc.LOGDEBUG)
+        return_url = req.full_url
+        if self._insecure:
+            return_url += '|verifypeer=false'
+            xbmc.log("Request is insecure %s"%return_url,level=xbmc.LOGDEBUG)   
+        return return_url
 
 
     def scrobble(self, sid, submission=True, listenTime=None):
