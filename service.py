@@ -18,6 +18,11 @@ connection = None
 scrobbleEnabled = Addon().get_setting('scrobble')
 scrobbled = False
 
+def popup(text, time=5000, image=None):
+    title = plugin.addon.getAddonInfo('name')
+    icon = plugin.addon.getAddonInfo('icon')
+    xbmc.executebuiltin('Notification(%s, %s, %d, %s)' % (title, text,
+                        time, icon))
 def get_connection():
     global connection
     
@@ -53,13 +58,15 @@ def scrobble_track(track_id):
     res = connection.scrobble(track_id)
     #xbmc.log("response %s"%(res), xbmc.LOGINFO)
     if res['status'] == 'ok':
+        popup('Scrobbled track')
         return True
     else:
+        popup('Scrobble failed')
         return False
 
 if __name__ == '__main__':
     monitor = xbmc.Monitor()
-    
+    xbmc.log("Service started", xbmc.LOGINFO)
     while not monitor.abortRequested():
         if monitor.waitForAbort(10):
             break
@@ -80,6 +87,8 @@ if __name__ == '__main__':
                             scrobbled = True
                     else:
                         pass
+            except IndexError:
+                print ("Not a Subsonic track")
             except Exception as e:
                 xbmc.log("Script failed %e"%e, xbmc.LOGINFO)
         else:
