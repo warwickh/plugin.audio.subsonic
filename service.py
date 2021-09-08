@@ -15,6 +15,7 @@ from simpleplugin import Addon
 plugin = Plugin()
 connection = None
 
+scrobbleEnabled = Addon().get_setting('scrobble')
 scrobbled = False
 
 def get_connection():
@@ -48,9 +49,9 @@ def scrobble_track(track_id):
     connection = get_connection()
 
     if connection==False:
-        return
+        return False
     res = connection.scrobble(track_id)
-    xbmc.log("response %s"%(scrobble), xbmc.LOGINFO)
+    #xbmc.log("response %s"%(res), xbmc.LOGINFO)
     if res['status'] == 'ok':
         return True
     else:
@@ -64,7 +65,7 @@ if __name__ == '__main__':
             break
         if (xbmc.getCondVisibility("Player.HasMedia")):
             try:            
-                if(Addon().get_setting('scrobble')):           
+                if(scrobbleEnabled):           
                     currentFileName = xbmc.getInfoLabel("Player.Filenameandpath")
                     currentFileProgress = xbmc.getInfoLabel("Player.Progress")   
                     pattern = re.compile(r'plugin:\/\/plugin\.audio\.subsonic\/\?action=play_track&id=(.*?)&')
@@ -74,8 +75,9 @@ if __name__ == '__main__':
                         scrobbled = False
                     elif (int(currentFileProgress)>=50 and scrobbled == False):
                         xbmc.log("Scrobbling Track Id %s"%(currentTrackId), xbmc.LOGDEBUG)
-                        scrobble_track(currentTrackId)
-                        scrobbled = True
+                        success = scrobble_track(currentTrackId)
+                        if success:
+                            scrobbled = True
                     else:
                         pass
             except Exception as e:
