@@ -16,24 +16,23 @@ Leia compatible version available in alternate branch
 * Download songs
 * Star songs
 * Navidrome compatibility added (please report any issues)
+* Scrobble to Last.FM
 
 ## Installation
+From repository
+[repository.warwickh-0.9.0.zip](https://github.com/warwickh/repository.warwickh/raw/master/matrix/zips/repository.warwickh/repository.warwickh-0.9.0.zip) (Please report any issues)
+
+From GitHub
 * Click the code button and download
 * Enable unknown sources and install from zip in Kodi
-
+ 
 or
-
 * Navigate to your `.kodi/addons/` folder
 * Clone this repository: `git clone https://github.com/warwickh/plugin.audio.subsonic.git`
 * (Re)start Kodi.
-
 Note: You may need to install dependencies manually if installing this way. I recommend installing from zip first, then updating using git clone
 
-Repository installation now available
-[repository.warwickh-0.9.0.zip](https://github.com/warwickh/repository.warwickh/raw/master/matrix/zips/repository.warwickh/repository.warwickh-0.9.0.zip) (Please report any issues)
-
 ## TODO
-* Scrobble to Last.FM (http://forum.kodi.tv/showthread.php?tid=195597&pid=2429362#pid2429362)
 * Improve the caching system
 * Search filter GUI for tracks and albums
 
