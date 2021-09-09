@@ -69,15 +69,16 @@ def scrobble_track(track_id):
         return False
 
 if __name__ == '__main__':
-    monitor = xbmc.Monitor()
-    xbmc.log("Subsonic service started", xbmc.LOGINFO)
-    popup("Subsonic service started")
-    while not monitor.abortRequested():
-        if monitor.waitForAbort(10):
-            break
-        if (xbmc.getCondVisibility("Player.HasMedia")):
-            try:            
-                if(scrobbleEnabled):           
+    if(scrobbleEnabled):  
+        monitor = xbmc.Monitor()
+        xbmc.log("Subsonic service started", xbmc.LOGINFO)
+        popup("Subsonic service started")
+        while not monitor.abortRequested():
+            if monitor.waitForAbort(10):
+                break
+            if (xbmc.getCondVisibility("Player.HasMedia")):
+                try:            
+             
                     currentFileName = xbmc.getInfoLabel("Player.Filenameandpath")
                     currentFileProgress = xbmc.getInfoLabel("Player.Progress")   
                     pattern = re.compile(r'plugin:\/\/plugin\.audio\.subsonic\/\?action=play_track&id=(.*?)&')
@@ -92,12 +93,13 @@ if __name__ == '__main__':
                             scrobbled = True
                     else:
                         pass
-            except IndexError:
-                print ("Not a Subsonic track")
-                scrobbled = True
-            except Exception as e:
-                xbmc.log("Subsonic service failed %e"%e, xbmc.LOGINFO)
-        else:
-            pass
-            #xbmc.log("Playing stopped", xbmc.LOGINFO)
-
+                except IndexError:
+                    print ("Not a Subsonic track")
+                    scrobbled = True
+                except Exception as e:
+                    xbmc.log("Subsonic service failed %e"%e, xbmc.LOGINFO)
+            else:
+                pass
+                #xbmc.log("Playing stopped", xbmc.LOGINFO)
+    else:
+        xbmc.log("Subsonic service not started due to settings", xbmc.LOGINFO)
