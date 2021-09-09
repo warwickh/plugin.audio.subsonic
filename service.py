@@ -58,15 +58,16 @@ def scrobble_track(track_id):
     res = connection.scrobble(track_id)
     #xbmc.log("response %s"%(res), xbmc.LOGINFO)
     if res['status'] == 'ok':
-        popup('Scrobbled track')
+        popup("Scrobbled track")
         return True
     else:
-        popup('Scrobble failed')
+        popup("Scrobble failed")
         return False
 
 if __name__ == '__main__':
     monitor = xbmc.Monitor()
-    xbmc.log("Service started", xbmc.LOGINFO)
+    xbmc.log("Subsonic service started", xbmc.LOGINFO)
+    popup("Subsonic service started")
     while not monitor.abortRequested():
         if monitor.waitForAbort(10):
             break
@@ -89,8 +90,9 @@ if __name__ == '__main__':
                         pass
             except IndexError:
                 print ("Not a Subsonic track")
+                scrobbled = True
             except Exception as e:
-                xbmc.log("Script failed %e"%e, xbmc.LOGINFO)
+                xbmc.log("Subsonic service failed %e"%e, xbmc.LOGINFO)
         else:
             pass
             #xbmc.log("Playing stopped", xbmc.LOGINFO)
