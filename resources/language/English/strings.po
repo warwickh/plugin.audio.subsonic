@@ -173,3 +173,6 @@ msgctxt "#30043"
 msgid "Merge album folders"
 msgstr ""
 
+msgctxt "#30044"
+msgid "Scrobble to Last.FM"
+msgstr ""

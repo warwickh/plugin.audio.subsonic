@@ -230,9 +230,11 @@ class Connection(object):
         viewName = '%s.view' % methodName
 
         req = self._getRequest(viewName)
+        xbmc.log("Pinging %s"%str(req.full_url),xbmc.LOGDEBUG)       
         try:
             res = self._doInfoReq(req)
-        except:
+        except Exception as e:
+            print("Ping failed %s"%e)
             return False
         if res['status'] == 'ok':
             return True
