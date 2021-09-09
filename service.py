@@ -15,7 +15,11 @@ from simpleplugin import Addon
 plugin = Plugin()
 connection = None
 
-scrobbleEnabled = Addon().get_setting('scrobble')
+try:
+    scrobbleEnabled = Addon().get_setting('scrobble')
+except:
+    scrobbleEnabled = False
+
 scrobbled = False
 
 def popup(text, time=5000, image=None):
