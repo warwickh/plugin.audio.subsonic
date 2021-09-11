@@ -20,6 +20,8 @@ from collections import namedtuple
 sys.path.append(xbmcvfs.translatePath(os.path.join(xbmcaddon.Addon("plugin.audio.subsonic").getAddonInfo("path"), "lib")))
 
 import libsonic
+#from lib.dbutils import SQLiteDatabase
+import lib.dbutils
 
 from simpleplugin import Plugin
 from simpleplugin import Addon
@@ -27,8 +29,13 @@ from simpleplugin import Addon
 # Create plugin instance
 plugin = Plugin()
 
+db = None
 connection = None
+
 cachetime = int(Addon().get_setting('cachetime'))
+
+db_filename = "subsonic_sqlite.db"
+db_path = os.path.join(plugin.profile_dir, db_filename)
 
 local_starred = set({})
 ListContext = namedtuple('ListContext', ['listing', 'succeeded','update_listing', 'cache_to_disk','sort_methods', 'view_mode','content', 'category'])
@@ -748,34 +755,35 @@ def get_entry_playlist(item,params):
     }
 
 def get_artist_info(artist_id, forced=False):
-    print("Updating artist info for id: %s"%(artist_id))
-    popup("Updating artist info\nplease wait")
-    last_update = 0
+    db = get_db()
     artist_info = {}
-    cache_file = 'ar-%s'%hashlib.md5(artist_id.encode('utf-8')).hexdigest()
-    with plugin.get_storage(cache_file) as storage:
-        try:
-            last_update = storage['updated']
-        except KeyError as e:
-            plugin.log("Artist keyerror, is this a new cache file? %s"%cache_file)    
-        if(time.time()-last_update>(random.randint(1,111)*360) or forced):
-            plugin.log("Artist cache expired, updating %s elapsed vs random %s forced %s"%(int(time.time()-last_update),(random.randint(1,111)*3600), forced))
-            try:
-                artist_info = connection.getArtistInfo2(artist_id).get('artistInfo2')
-                storage['artist_info'] = artist_info
-                storage['updated']=time.time()
-            except AttributeError as e:
-                plugin.log("Attribute error, probably couldn't find any info")
-        else:
-            print("Cache ok for %s retrieving"%artist_id)
-            artist_info = storage['artist_info']
+    print("Retreiving artist info for id: %s"%(artist_id))
+    popup("Updating artist info\nplease wait")
+    try:    
+        artist_record = db.get_artist_info(artist_id)
+        print("Outer %s"%len(artist_record))
+        if(len(artist_record)==0):
+            print("Empty record, getting data for %s"%artist_id)
+            artist_info = json.dumps(connection.getArtistInfo2(artist_id).get('artistInfo2'))
+            print("Adding to DB artist info: %s"%artist_info)
+            if(db.update_artist(artist_id, artist_info, time.time())):
+                plugin.log("Success")
+            else:
+                plugin.log("Failed") 
+            artist_record = db.get_artist_info(artist_id)
+        artist_info = json.loads(artist_record[0][1])
+        last_update = artist_record[0][2]
+        plugin.log("Artist info: %s"%artist_info) 
+        plugin.log("Last update: %s"%last_update)    
+    except Exception as e:
+        print("Error get info from DB %s"%e)   
     return artist_info
 
 def get_entry_artist(item,params):
     image = connection.getCoverArtUrl(item.get('coverArt'))
-    #artist_info = get_artist_info(item.get('id'))
-    #artist_bio = artist_info.get('biography')
-    #fanart = artist_info.get('largeImageUrl')
+    artist_info = get_artist_info(item.get('id'))
+    artist_bio = artist_info.get('biography')
+    fanart = artist_info.get('largeImageUrl')
     fanart = image
     return {
         'label':    get_starred_label(item.get('id'),item.get('name')),
@@ -795,7 +803,7 @@ def get_entry_artist(item,params):
 		        #'title':    "testtitle",
 		        #'album':    "testalbum",
 		        #'comment':  "testcomment"
-                #'title':    artist_bio
+                'title':    artist_bio
             }
         }
     }
@@ -1511,6 +1519,16 @@ def walk_tracks_starred():
             yield song
     except KeyError:
         yield from ()
+
+def get_db():
+    global db_path    
+    #global db
+    plugin.log("Getting DB %s"%db_path)  
+    if 1:#try:
+        db = lib.dbutils.SQLiteDatabase(db_path)
+    #except Exception as e:
+    #    plugin.log("Connecting to DB failed: %s"%e)    
+    return db   
 
 # Start plugin from within Kodi.
 if __name__ == "__main__":
