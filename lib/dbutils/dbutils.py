@@ -1,9 +1,17 @@
 import sqlite3 as sql
+import time
 
 tbl_artist_info_ddl = str('CREATE TABLE artist_info ('
-                            'artist_id        TEXT NOT NULL PRIMARY KEY,'
-                            'artist_info      TEXT,'
-                            'last_update      TEXT);')
+                            'artist_id                  TEXT NOT NULL PRIMARY KEY,'
+                            'artist_name                TEXT,'
+                            'artist_info                TEXT,'
+                            'mb_artist_id               TEXT,'
+                            'image_url                  TEXT,'
+                            'wikidata_url               TEXT,'
+                            'wikipedia_url              TEXT,'
+                            'wikipedia_image            TEXT,'
+                            'wikipedia_extract          TEXT,'
+                            'last_update                TEXT);')
 
 class SQLiteDatabase(object):
     def __init__(self, db_filename):
@@ -46,6 +54,7 @@ class SQLiteDatabase(object):
                 cursor.execute(query, params)
             else:
                 cursor.execute(query)
+            print("%s rows affected"%cursor.rowcount)
             return cursor
         except sql.Error as e:
             print("SQLite error %s"%e.args[0])
@@ -55,11 +64,36 @@ class SQLiteDatabase(object):
             print("Error params %s"%str(params))  
             print("Error params type %s"%type(params))
 
-    def update_artist(self, artist_id, artist_info, update_time):
-        success = False
-        query = 'INSERT or REPLACE INTO artist_info VALUES (?, ?, ?)'
-        params = (str(artist_id), str(artist_info), str(update_time)) 
+    def get_record_age(self, artist_id):
+        try:
+            last_update = self.get_value(artist_id, 'last_update')
+            record_age = round(time.time())-round(float(last_update[0][0]))
+            return record_age
+        except Exception as e:
+            print("get_record_age failed %s" % e)
+        return
+
+    def get_artist_info(self, artist_id):   
+        query = 'SELECT * FROM artist_info WHERE artist_id = ?'# %str(artist_id)
+        params = [str(artist_id)]    
         cursor = self.run_query(query, params)
+        return cursor.fetchall()
+
+    def get_all(self):
+        query = 'SELECT * FROM artist_info'
+        #params = [str(artist_id)]    
+        cursor = self.run_query(query)#, params)
+        return cursor.fetchall()
+
+    def update_value(self, artist_id, field_name, field_value):
+        success = False
+        query = 'UPDATE artist_info SET %s = ?, last_update = ? WHERE artist_id = ?' % str(field_name)        
+        params = [str(field_value), str(time.time()), str(artist_id)] 
+        cursor = self.run_query(query, params)
+        if (cursor.rowcount == 0):
+            query = 'INSERT OR IGNORE INTO artist_info (artist_id, %s, last_update) VALUES (?, ?, ?)' % str(field_name)        
+            params = [str(artist_id), str(field_value), str(time.time())] 
+            cursor = self.run_query(query, params)
         try:
             self.conn.commit()
             success = True
@@ -68,8 +102,8 @@ class SQLiteDatabase(object):
             pass
         return success
 
-    def get_artist_info(self, artist_id):   
-        query = 'SELECT * FROM artist_info WHERE artist_id = ?'
+    def get_value(self, artist_id, field_name):   
+        query = 'SELECT %s FROM artist_info WHERE artist_id = ?' % str(field_name)
         params = [str(artist_id)]    
         cursor = self.run_query(query, params)
         return cursor.fetchall()

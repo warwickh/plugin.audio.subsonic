@@ -756,25 +756,22 @@ def get_entry_playlist(item,params):
 
 def get_artist_info(artist_id, forced=False):
     db = get_db()
-    artist_info = {}
+    artist_info = ""
     print("Retreiving artist info for id: %s"%(artist_id))
-    popup("Updating artist info\nplease wait")
+    #popup("Updating artist info\nplease wait")
     try:    
-        artist_record = db.get_artist_info(artist_id)
-        print("Outer %s"%len(artist_record))
-        if(len(artist_record)==0):
-            print("Empty record, getting data for %s"%artist_id)
-            artist_info = json.dumps(connection.getArtistInfo2(artist_id).get('artistInfo2'))
-            print("Adding to DB artist info: %s"%artist_info)
-            if(db.update_artist(artist_id, artist_info, time.time())):
-                plugin.log("Success")
-            else:
-                plugin.log("Failed") 
-            artist_record = db.get_artist_info(artist_id)
-        artist_info = json.loads(artist_record[0][1])
-        last_update = artist_record[0][2]
-        plugin.log("Artist info: %s"%artist_info) 
-        plugin.log("Last update: %s"%last_update)    
+        artist_info = db.get_value(artist_id, 'artist_info')[0][0]
+        artist_wiki = db.get_value(artist_id, 'wikipedia_extract')[0][0] 
+        #plugin.log("Artist info: %s"%artist_info) 
+        #plugin.log("Artist wiki: %s"%artist_wiki)
+        #plugin.log("Len Artist info: %s"%len(artist_info))
+        #plugin.log("Len Artist wiki: %s"%len(artist_wiki))
+        if(len(artist_info)<10):
+            print("Using wiki data")
+            artist_info = artist_wiki
+        if(artist_info is None):
+            print("artist_info is None making empty string")
+            artist_info = ""
     except Exception as e:
         print("Error get info from DB %s"%e)   
     return artist_info
@@ -782,8 +779,12 @@ def get_artist_info(artist_id, forced=False):
 def get_entry_artist(item,params):
     image = connection.getCoverArtUrl(item.get('coverArt'))
     artist_info = get_artist_info(item.get('id'))
-    artist_bio = artist_info.get('biography')
-    fanart = artist_info.get('largeImageUrl')
+    if(artist_info is None or artist_info == 'None'):
+        artist_lbl = '%s' % (item.get('name'))
+    else:
+        artist_lbl = '%s - %s' % (item.get('name'),artist_info)
+    print("Using label %s"%artist_lbl)
+    #artist_bio = artist_info.get('biography')
     fanart = image
     return {
         'label':    get_starred_label(item.get('id'),item.get('name')),
@@ -799,11 +800,13 @@ def get_entry_artist(item,params):
         'info': {
             'music': { ##http://romanvm.github.io/Kodistubs/_autosummary/xbmcgui.html#xbmcgui.ListItem.setInfo
                 'count':    item.get('albumCount'),
-                'artist':   item.get('name'),
-		        #'title':    "testtitle",
-		        #'album':    "testalbum",
-		        #'comment':  "testcomment"
-                'title':    artist_bio
+                'artist':   artist_lbl,
+		        #'title':    'testtitle',
+		        #'album':    'testalbum',
+		        #'comment':  'testcomment',
+		        #'label' : 'testlabel',
+		        #'label2' : 'testlabel2',
+                #'title':    artist_info
             }
         }
     }
