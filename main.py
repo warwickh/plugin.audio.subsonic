@@ -19,9 +19,8 @@ from collections import namedtuple
 # Add the /lib folder to sys
 sys.path.append(xbmcvfs.translatePath(os.path.join(xbmcaddon.Addon("plugin.audio.subsonic").getAddonInfo("path"), "lib")))
 
+import dbutils
 import libsonic
-#from lib.dbutils import SQLiteDatabase
-import lib.dbutils
 
 from simpleplugin import Plugin
 from simpleplugin import Addon
@@ -29,13 +28,13 @@ from simpleplugin import Addon
 # Create plugin instance
 plugin = Plugin()
 
-db = None
 connection = None
+db = None
 
 cachetime = int(Addon().get_setting('cachetime'))
 
 db_filename = "subsonic_sqlite.db"
-db_path = os.path.join(plugin.profile_dir, db_filename)
+
 
 local_starred = set({})
 ListContext = namedtuple('ListContext', ['listing', 'succeeded','update_listing', 'cache_to_disk','sort_methods', 'view_mode','content', 'category'])
@@ -1524,13 +1523,14 @@ def walk_tracks_starred():
         yield from ()
 
 def get_db():
-    global db_path    
-    #global db
+    global db
+    global db_filename 
+    db_path = os.path.join(plugin.profile_dir, db_filename)
     plugin.log("Getting DB %s"%db_path)  
-    if 1:#try:
-        db = lib.dbutils.SQLiteDatabase(db_path)
-    #except Exception as e:
-    #    plugin.log("Connecting to DB failed: %s"%e)    
+    try:
+        db = dbutils.SQLiteDatabase(db_path)
+    except Exception as e:
+        plugin.log("Connecting to DB failed: %s"%e)    
     return db   
 
 # Start plugin from within Kodi.

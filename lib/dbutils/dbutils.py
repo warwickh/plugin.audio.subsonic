@@ -46,7 +46,7 @@ class SQLiteDatabase(object):
         return self.conn.cursor()
 
     def run_query(self, query, params=None, cursor=None):
-        print("Processing query %s params %s"%(str(query),str(params)))      
+        #print("Processing query %s params %s"%(str(query),str(params)))      
         try:
             if cursor is None:
                 cursor = self.get_cursor()
@@ -54,7 +54,7 @@ class SQLiteDatabase(object):
                 cursor.execute(query, params)
             else:
                 cursor.execute(query)
-            print("%s rows affected"%cursor.rowcount)
+            #print("%s rows affected"%cursor.rowcount)
             return cursor
         except sql.Error as e:
             print("SQLite error %s"%e.args[0])
@@ -71,7 +71,7 @@ class SQLiteDatabase(object):
             return record_age
         except Exception as e:
             print("get_record_age failed %s" % e)
-        return
+        return 0
 
     def get_artist_info(self, artist_id):   
         query = 'SELECT * FROM artist_info WHERE artist_id = ?'# %str(artist_id)

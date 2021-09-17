@@ -175,3 +175,7 @@ msgstr ""
 msgctxt "#30044"
 msgid "Scrobble to Last.FM"
 msgstr ""
+
+msgctxt "#30045"
+msgid "Enhanced Information"
+msgstr ""
