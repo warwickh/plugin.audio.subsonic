@@ -80,11 +80,11 @@ def get_db():
     global db
     global db_filename 
     db_path = os.path.join(plugin.profile_dir, db_filename)   
-    print("Getting DB %s"%db_path)  
+    plugin.log("Getting DB %s"%db_path)  
     try:
         db = dbutils.SQLiteDatabase(db_path)
     except Exception as e:
-        print("Connecting to DB failed: %s"%e)    
+        plugin.log("Connecting to DB failed: %s"%e)    
     return db   
 
 def check_artist_info():
@@ -97,9 +97,9 @@ def check_artist_info():
                 artist_name = db.get_value(artist_id, 'artist_name')
                 artist_info = db.get_value(artist_id, 'artist_info')
                 artist_wiki = db.get_value(artist_id, 'wikipedia_extract')
-                print("Name %s"%(artist_name))
-                print("LastFM %s"%(artist_info))
-                print("Wiki %s"%(artist_wiki))
+                plugin.log("Name %s"%(artist_name))
+                plugin.log("LastFM %s"%(artist_info))
+                plugin.log("Wiki %s"%(artist_wiki))
 
 def refresh_artist(artist_id):
     db = get_db()
@@ -112,7 +112,7 @@ def refresh_artist(artist_id):
         artist_info = artist_info['artistInfo2']['biography']
         #pattern = '<a target=\'_blank\' href="https://www.last.fm/music/Afrojack">Read more on Last.fm</a>
         artist_info = re.sub('<a.*?</a>', '', artist_info)
-        print("subbed: %s"%artist_info)
+        plugin.log("subbed: %s"%artist_info)
     except:
         artist_info = ""
     mb_artist_id = mb.get_artist_id(artist_name)
@@ -137,7 +137,7 @@ def check_db_status(forced=False):
         try:             
             if(time.time()-check_freq > last_db_check) or forced:
                 #popup("DB Check Starting")
-                xbmc.log("DB check starting %s %s" % (time.time(), last_db_check), xbmc.LOGINFO)
+                plugin.log("DB check starting %s %s" % (time.time(), last_db_check))
                 db = get_db()
                 connection = get_connection()
                 response = connection.getArtists()
@@ -146,13 +146,13 @@ def check_db_status(forced=False):
                             artist_id = artist['id']
                             record_age = db.get_record_age(artist_id) 
                             if(forced or not record_age or (record_age > (random.randint(1,111)*refresh_age))) and not refresh_single_flag:
-                                #print("Record age %s vs %s for %s"%(record_age, (random.randint(1,111)*refresh_age), artist_id)) 
+                                #plugin.log("Record age %s vs %s for %s"%(record_age, (random.randint(1,111)*refresh_age), artist_id)) 
                                 #popup("Refreshing %s" % artist_id)
                                 refresh_artist(artist_id)
                                 if(record_age>0):refresh_single_flag = True
                 last_db_check = time.time()
         except Exception as e:
-            xbmc.log("DB rcheck failed %e"%e, xbmc.LOGINFO)
+            plugin.log("DB rcheck failed %s"%e)
 
     return
 
@@ -174,7 +174,7 @@ def check_player_status():
             else:
                 pass
         except IndexError:
-            print ("Not a Subsonic track")
+            plugin.log ("Not a Subsonic track")
             scrobbled = True
         except Exception as e:
             xbmc.log("Subsonic scrobble check failed %e"%e, xbmc.LOGINFO)
@@ -207,4 +207,4 @@ if __name__ == '__main__':
             check_player_status()
             check_db_status()
     else:
-        xbmc.log("Subsonic service not started due to settings", xbmc.LOGINFO)
+        plugin.log("Subsonic service not started due to settings")

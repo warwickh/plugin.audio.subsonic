@@ -59,10 +59,11 @@ class SQLiteDatabase(object):
         except sql.Error as e:
             print("SQLite error %s"%e.args[0])
         except ValueError:
-            print("Error query %s"%str(query))  
-            print("Error query type %s"%type(query))
-            print("Error params %s"%str(params))  
-            print("Error params type %s"%type(params))
+            pass
+            #print("Error query %s"%str(query))  
+            #print("Error query type %s"%type(query))
+            #print("Error params %s"%str(params))  
+            #print("Error params type %s"%type(params))
 
     def get_record_age(self, artist_id):
         try:

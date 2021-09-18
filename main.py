@@ -755,18 +755,19 @@ def get_entry_playlist(item,params):
 
 def get_image(item):
     db = get_db()
+    image = None
     try:
-        image = db.get_value(item.get('id'), 'wikipedia_image')[0][0]
+        if Addon().get_setting('enhanced_info'):
+            image = db.get_value(item.get('id'), 'wikipedia_image')[0][0]
         print("Checking image type %s %s %s"%(item.get('id'), image, type(image)))        
         if (image is None) or (image =='') or (image =='None'):
             connection = get_connection()
-            print("No good, getting from lastfm")
             image = connection.getCoverArtUrl(item.get('coverArt'))
             print("got %s from lastfm"%image)
             #Might fall back to album art if necessary                    
         return image
     except:
-        return
+        return image
 
 def get_artist_info(artist_id, forced=False):
     db = get_db()
@@ -774,15 +775,18 @@ def get_artist_info(artist_id, forced=False):
     print("Retreiving artist info for id: %s"%(artist_id))
     #popup("Updating artist info\nplease wait")
     try:    
-        artist_info = db.get_value(artist_id, 'artist_info')[0][0]
-        artist_wiki = db.get_value(artist_id, 'wikipedia_extract')[0][0] 
-        #plugin.log("Artist info: %s"%artist_info) 
-        #plugin.log("Artist wiki: %s"%artist_wiki)
-        #plugin.log("Len Artist info: %s"%len(artist_info))
-        #plugin.log("Len Artist wiki: %s"%len(artist_wiki))
-        if(len(artist_info)<10):
-            print("Using wiki data")
-            artist_info = artist_wiki
+        if Addon().get_setting('enhanced_info'):
+            artist_info = db.get_value(artist_id, 'artist_info')[0][0]
+            artist_wiki = db.get_value(artist_id, 'wikipedia_extract')[0][0] 
+            #plugin.log("Artist info: %s"%artist_info) 
+            #plugin.log("Artist wiki: %s"%artist_wiki)
+            #plugin.log("Len Artist info: %s"%len(artist_info))
+            #plugin.log("Len Artist wiki: %s"%len(artist_wiki))
+            if(len(artist_info)<10):
+                print("Using wiki data")
+                artist_info = artist_wiki
+        else:
+            return ""
         if(artist_info is None):
             print("artist_info is None making empty string")
             artist_info = ""
