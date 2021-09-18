@@ -146,11 +146,10 @@ def check_db_status(forced=False):
                             artist_id = artist['id']
                             record_age = db.get_record_age(artist_id) 
                             if(forced or not record_age or (record_age > (random.randint(1,111)*refresh_age))) and not refresh_single_flag:
-                                print("If flag is True I shouldn't be here %s"% refresh_single_flag)                               
-                                print("Record age %s vs %s for %s"%(record_age, (random.randint(1,111)*refresh_age), artist_id)) 
+                                #print("Record age %s vs %s for %s"%(record_age, (random.randint(1,111)*refresh_age), artist_id)) 
                                 #popup("Refreshing %s" % artist_id)
                                 refresh_artist(artist_id)
-                                refresh_single_flag = True
+                                if(record_age>0):refresh_single_flag = True
                 last_db_check = time.time()
         except Exception as e:
             xbmc.log("DB rcheck failed %e"%e, xbmc.LOGINFO)

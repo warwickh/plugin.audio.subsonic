@@ -753,6 +753,21 @@ def get_entry_playlist(item,params):
         }}
     }
 
+def get_image(item):
+    db = get_db()
+    try:
+        image = db.get_value(item.get('id'), 'wikipedia_image')[0][0]
+        print("Checking image type %s %s %s"%(item.get('id'), image, type(image)))        
+        if (image is None) or (image =='') or (image =='None'):
+            connection = get_connection()
+            print("No good, getting from lastfm")
+            image = connection.getCoverArtUrl(item.get('coverArt'))
+            print("got %s from lastfm"%image)
+            #Might fall back to album art if necessary                    
+        return image
+    except:
+        return
+
 def get_artist_info(artist_id, forced=False):
     db = get_db()
     artist_info = ""
@@ -776,9 +791,10 @@ def get_artist_info(artist_id, forced=False):
     return artist_info
 
 def get_entry_artist(item,params):
-    image = connection.getCoverArtUrl(item.get('coverArt'))
+    image = get_image(item)
     artist_info = get_artist_info(item.get('id'))
-    if(artist_info is None or artist_info == 'None'):
+    #print("Checking for value %s %s"%(artist_info, type(artist_info)))
+    if(artist_info is None or artist_info == 'None' or artist_info == ''):
         artist_lbl = '%s' % (item.get('name'))
     else:
         artist_lbl = '%s - %s' % (item.get('name'),artist_info)
