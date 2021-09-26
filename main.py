@@ -51,7 +51,7 @@ def get_connection():
     if connection==None:   
         connected = False  
         # Create connection      
-        try:
+        if 1:#try:
             connection = libsonic.Connection(
                 baseUrl=Addon().get_setting('subsonic_url'),
                 username=Addon().get_setting('username', convert=False),
@@ -63,8 +63,8 @@ def get_connection():
                 useGET=Addon().get_setting('useget'),
             )            
             connected = connection.ping()
-        except:
-            pass
+        #except:
+        #    pass
 
         if connected==False:
             popup('Connection error')
@@ -762,9 +762,15 @@ def get_image(item):
         print("Checking image type %s %s %s"%(item.get('id'), image, type(image)))        
         if (image is None) or (image =='') or (image =='None'):
             connection = get_connection()
+            print("Using coverart tag from item %s is it same as %s ?"%(item.get('coverArt'),item.get('id')))
             image = connection.getCoverArtUrl(item.get('coverArt'))
-            print("got %s from lastfm"%image)
-            #Might fall back to album art if necessary                    
+            print("got %s from lastfm for %s"%(image,item.get('name')))
+            print("If I user id instead I would get %s"%connection.getCoverArtUrl(item.get('id')))
+            #Might fall back to album art if necessary - disabled no extra results
+            if "blah&id=" not in image:
+                album_id = connection.getArtist(item.get('id')).get('artist').get('album')[0].get('coverArt')                
+                image = connection.getCoverArtUrl(album_id)
+                print("got %s from lastfm - first album for artist %s"%(image,item.get('name')))                   
         return image
     except:
         return image
