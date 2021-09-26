@@ -2,7 +2,6 @@
 <addon id="plugin.audio.subsonic" name="Subsonic" version="3.0.1" provider-name="BasilFX,warwickh">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
-        <import addon="script.module.future" version="0.18.2"/>
     </requires>
     <extension point="xbmc.python.pluginsource" library="main.py">
         <provides>audio</provides>
