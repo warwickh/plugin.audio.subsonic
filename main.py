@@ -9,7 +9,6 @@ import xbmcgui
 import json
 import shutil
 import time
-import dateutil.parser
 import hashlib
 import random
 from datetime import datetime
@@ -51,7 +50,7 @@ def get_connection():
     if connection==None:   
         connected = False  
         # Create connection      
-        if 1:#try:
+        try:
             connection = libsonic.Connection(
                 baseUrl=Addon().get_setting('subsonic_url'),
                 username=Addon().get_setting('username', convert=False),
@@ -63,6 +62,10 @@ def get_connection():
                 useGET=Addon().get_setting('useget'),
             )            
             connected = connection.ping()
+        except ModuleNotFoundError as e_mnf:
+            popup("Missing dependencies")
+        except Exception as e:
+            plugin.log("Exception: %s"%e)        
         #except:
         #    pass
 
@@ -1088,7 +1091,11 @@ def navigate_root():
 
 #converts a date string from eg. '2012-04-17T19:53:44' to eg. '17.04.2012'
 def convert_date_from_iso8601(iso8601):
-    date_obj = dateutil.parser.parse(iso8601)
+    format = "%Y-%m-%dT%H:%M:%S"    
+    try:
+        date_obj = datetime.strptime(iso8601.split(".")[0], format)
+    except TypeError:
+        date_obj = datetime(*(time.strptime(iso8601.split(".")[0], format)[0:6]))
     return date_obj.strftime('%d.%m.%Y')
 
 def context_action_star(type,id):
