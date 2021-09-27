@@ -30,7 +30,8 @@ or
 * Navigate to your `.kodi/addons/` folder
 * Clone this repository: `git clone https://github.com/warwickh/plugin.audio.subsonic.git`
 * (Re)start Kodi.
-Note: You may need to install dependencies manually if installing this way. I recommend installing from zip first, then updating using git clone
+
+Note: You will need to enter your server settings into the plugin configuration before use
 
 ## TODO
 * Improve the caching system
