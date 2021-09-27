@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # Created on: 03.06.2015
+# Python2 support removed 28.09.2021
 """
 SimplePlugin micro-framework for Kodi content plugins
 
@@ -8,17 +9,8 @@ SimplePlugin micro-framework for Kodi content plugins
 **License**: `GPL v.3 <https://www.gnu.org/copyleft/gpl.html>`_
 """
 
-from __future__ import unicode_literals
-from future.builtins import (zip, super,
-                             bytes, dict, int, list, object, str)
-from future.utils import (PY2, PY3, iteritems, itervalues,
-                          python_2_unicode_compatible)
-# from future.standard_library import install_aliases
-# install_aliases()
-
-if PY3:
-    basestring = str
-    long = int
+basestring = str
+long = int
 
 import os
 import sys
@@ -34,24 +26,16 @@ from shutil import copyfile
 from contextlib import contextmanager
 from pprint import pformat
 from platform import uname
-if PY3:
-    from urllib.parse import urlencode, quote_plus, urlparse, unquote_plus, parse_qs
-else:
-    from future.backports.urllib.parse import urlencode, quote_plus, urlparse, unquote_plus
-    from urlparse import parse_qs
+from urllib.parse import urlencode, quote_plus, urlparse, unquote_plus, parse_qs
 import xbmcaddon
 import xbmc
 import xbmcgui
 import xbmcvfs
 
 __all__ = ['SimplePluginError', 'Storage', 'MemStorage', 'Addon', 'Plugin',
-           'RoutedPlugin', 'Params', 'log_exception', 'py2_encode',
-           'py2_decode', 'translate_path']
+           'RoutedPlugin', 'Params', 'log_exception', 'translate_path']
 
-if PY3:
-    getargspec = inspect.getfullargspec
-else:
-    getargspec = inspect.getargspec
+getargspec = inspect.getfullargspec
 
 Route = namedtuple('Route', ['pattern', 'func'])
 
@@ -80,28 +64,6 @@ def _format_vars(variables):
         if not (var.startswith('__') or var.endswith('__')):
             lines.append('{0} = {1}'.format(var, pformat(val)))
     return '\n'.join(lines)
-
-
-def py2_encode(s, encoding='utf-8'):
-    """
-    Encode Python 2 ``unicode`` to ``str``
-
-    In Python 3 the string is not changed.
-    """
-    if PY2 and isinstance(s, str):
-        s = s.encode(encoding)
-    return s
-
-
-def py2_decode(s, encoding='utf-8'):
-    """
-    Decode Python 2 ``str`` to ``unicode``
-
-    In Python 3 the string is not changed.
-    """
-    if PY2 and isinstance(s, bytes):
-        s = s.decode(encoding)
-    return s
 
 def _kodi_major_version():
     kodi_version = xbmc.getInfoLabel('System.BuildVersion').split(' ')[0]
@@ -146,12 +108,12 @@ def log_exception(logger=None):
         yield
     except:
         if logger is None:
-            logger = lambda msg: xbmc.log(py2_encode(msg), xbmc.LOGERROR)
+            logger = lambda msg: xbmc.log(msg, xbmc.LOGERROR)
         frame_info = inspect.trace(5)[-1]
         logger('Unhandled exception detected!')
         logger('*** Start diagnostic info ***')
         logger('System info: {0}'.format(uname()))
-        logger('OS info: {0}'.format(py2_decode(xbmc.getInfoLabel('System.OSVersionInfo'))))
+        logger('OS info: {0}'.format(xbmc.getInfoLabel('System.OSVersionInfo')))
         logger('Kodi version: {0}'.format(
             xbmc.getInfoLabel('System.BuildVersion'))
         )
@@ -170,7 +132,7 @@ def log_exception(logger=None):
         raise
 
 
-@python_2_unicode_compatible
+
 class Params(dict):
     """
     Params(**kwargs)
@@ -198,7 +160,7 @@ class Params(dict):
         return '<Params {0}>'.format(super(Params, self).__str__())
 
 
-@python_2_unicode_compatible
+
 class Storage(MutableMapping):
     """
     Storage(storage_dir, filename='storage.pcl')
@@ -303,7 +265,7 @@ class Storage(MutableMapping):
         return deepcopy(self._storage)
 
 
-@python_2_unicode_compatible
+
 class MemStorage(MutableMapping):
     """
     MemStorage(storage_id)
@@ -367,7 +329,7 @@ class MemStorage(MutableMapping):
 
     def __getitem__(self, key):
         self._check_key(key)
-        full_key = py2_encode('{0}__{1}'.format(self._id, key))
+        full_key = '{0}__{1}'.format(self._id, key)
         raw_item = self._window.getProperty(full_key)
         if raw_item:
             try:
@@ -379,7 +341,7 @@ class MemStorage(MutableMapping):
 
     def __setitem__(self, key, value):
         self._check_key(key)
-        full_key = py2_encode('{0}__{1}'.format(self._id, key))
+        full_key = '{0}__{1}'.format(self._id, key)
         # protocol=0 is needed for safe string handling in Python 3
         self._window.setProperty(full_key, pickle.dumps(value, protocol=0))
         if key != '__keys__':
@@ -389,7 +351,7 @@ class MemStorage(MutableMapping):
 
     def __delitem__(self, key):
         self._check_key(key)
-        full_key = py2_encode('{0}__{1}'.format(self._id, key))
+        full_key = '{0}__{1}'.format(self._id, key)
         item = self._window.getProperty(full_key)
         if item:
             self._window.clearProperty(full_key)
@@ -402,7 +364,7 @@ class MemStorage(MutableMapping):
 
     def __contains__(self, key):
         self._check_key(key)
-        full_key = py2_encode('{0}__{1}'.format(self._id, key))
+        full_key = '{0}__{1}'.format(self._id, key)
         item = self._window.getProperty(full_key)
         return bool(item)
 
@@ -413,7 +375,7 @@ class MemStorage(MutableMapping):
         return len(self['__keys__'])
 
 
-@python_2_unicode_compatible
+
 class Addon(object):
     """
     Base addon class
@@ -430,9 +392,7 @@ class Addon(object):
         :type id_: str
         """
         self._addon = xbmcaddon.Addon(id_)
-        self._profile_dir = py2_decode(
-            translate_path(self._addon.getAddonInfo('profile'))
-        )
+        self._profile_dir = translate_path(self._addon.getAddonInfo('profile'))
         self._ui_strings_map = None
         if not os.path.exists(self._profile_dir):
             os.mkdir(self._profile_dir)
@@ -468,7 +428,7 @@ class Addon(object):
         :return: path to the addon folder
         :rtype: unicode
         """
-        return py2_decode(self._addon.getAddonInfo('path'))
+        return self._addon.getAddonInfo('path')
 
     @property
     def icon(self):
@@ -633,7 +593,7 @@ class Addon(object):
         :type convert: bool
         :return: setting value
         """
-        setting = py2_decode(self._addon.getSetting(id_))
+        setting = self._addon.getSetting(id_)
         if convert:
             if setting == 'true':
                 return True  # Convert boolean strings to bool
@@ -664,7 +624,7 @@ class Addon(object):
             value = 'true' if value else 'false'
         elif not isinstance(value, basestring):
             value = str(value)
-        self._addon.setSetting(id_, py2_encode(value))
+        self._addon.setSetting(id_, value)
 
     def log(self, message, level=xbmc.LOGDEBUG):
         """
@@ -677,7 +637,7 @@ class Addon(object):
         :type level: int
         """
         xbmc.log(
-            py2_encode('{0} [v.{1}]: {2}'.format(self.id, self.version, message)),
+            '{0} [v.{1}]: {2}'.format(self.id, self.version, message),
             level
         )
 
@@ -957,7 +917,7 @@ class Addon(object):
         return ui_strings
 
 
-@python_2_unicode_compatible
+
 class Plugin(Addon):
     """
     Plugin class with URL query string routing.
@@ -1016,9 +976,9 @@ class Plugin(Addon):
         """
         raw_params = parse_qs(paramstring)
         params = Params()
-        for key, value in iteritems(raw_params):
+        for key, value in iter(raw_params.items()):
             param_value = value[0] if len(value) == 1 else value
-            params[key] = py2_decode(param_value)
+            params[key] = param_value
         return params
 
     def get_url(self, plugin_url='', **kwargs):
@@ -1125,7 +1085,7 @@ class Plugin(Addon):
                     return action_callable(self._params)
 
 
-@python_2_unicode_compatible
+
 class RoutedPlugin(Plugin):
     """
     Plugin class that implements "pretty URL" routing similar to Flask and Bottle
@@ -1224,7 +1184,7 @@ class RoutedPlugin(Plugin):
             for arg, match in zip(args, matches):
                 pattern = pattern.replace(
                     match,
-                    quote_plus(py2_encode(str(arg)))
+                    quote_plus(str(arg))
                 )
             # list allows to manipulate the dict during iteration
             for key, value in list(iteritems(kwargs)):
@@ -1237,7 +1197,7 @@ class RoutedPlugin(Plugin):
 
                     if key == match_string:
                         pattern = pattern.replace(
-                            match, quote_plus(py2_encode(str(value)))
+                            match, quote_plus(str(value))
                         )
                         del kwargs[key]
         url = 'plugin://{0}{1}'.format(self.id, pattern)
@@ -1378,7 +1338,7 @@ class RoutedPlugin(Plugin):
                             value = float(value)
                         kwargs[key] = value
                     else:
-                        kwargs[key] = py2_decode(unquote_plus(value))
+                        kwargs[key] = unquote_plus(value)
                 self.log_debug(
                     'Calling {0} with kwargs {1}'.format(route, kwargs))
                 with log_exception(self.log_error):
