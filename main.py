@@ -62,8 +62,6 @@ def get_connection():
                 useGET=Addon().get_setting('useget'),
             )            
             connected = connection.ping()
-        except ModuleNotFoundError as e_mnf:
-            popup("Missing dependencies")
         except Exception as e:
             plugin.log("Exception: %s"%e)        
         #except:
