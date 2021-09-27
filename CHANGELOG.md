@@ -1,5 +1,10 @@
 # Changelog
 
+## v3.0.2
+Released 29th September 2021 (by warwickh)
+* Removed dependency on future and dateutil 
+* Simpleplugin modified - no longer py2 compatible
+
 ## v3.0.1
 Released 2nd September 2021 (by warwickh)
 * Added Navidrome compatibility (remove dependency on integer ids)
