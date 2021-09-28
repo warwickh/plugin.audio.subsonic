@@ -17,6 +17,7 @@ Leia compatible version available in alternate branch
 * Star songs
 * Navidrome compatibility added (please report any issues)
 * Scrobble to Last.FM
+* Enhanced data loading from Musicbrainz and wikipedia (switch on in settings and restart)
 
 ## Installation
 From repository
