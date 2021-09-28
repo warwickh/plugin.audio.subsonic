@@ -229,14 +229,14 @@ class Connection(object):
         methodName = 'ping'
         viewName = '%s.view' % methodName
         req = self._getRequest(viewName)
-        #print("Pinging %s"%str(req.full_url)),xbmc.logDEBUG)
-        #xbmc.log("Pinging %s"%str(req.full_url),xbmc.logDEBUG)       
+        #print("Pinging %s"%str(req.full_url)),level=xbmc.LOGDEBUG)
+        #xbmc.log("Pinging %s"%str(req.full_url),level=xbmc.LOGDEBUG)       
         try:
             res = self._doInfoReq(req)
             #print(res)
         except Exception as e:
             #print("Ping failed %s"%e)
-            xbmc.log("Ping failed %s"%e,xbmc.logDEBUG)
+            xbmc.log("Ping failed %s"%e,level=xbmc.LOGDEBUG)
             return False
         if res['status'] == 'ok':
             return True
@@ -898,11 +898,11 @@ class Connection(object):
             'converted': converted})
 
         req = self._getRequest(viewName, q)
-        ##xbmc.log("Requesting %s"%str(req.full_url),xbmc.logDEBUG)
+        ##xbmc.log("Requesting %s"%str(req.full_url),level=xbmc.LOGDEBUG)
         return_url = req.full_url
         if self._insecure:
             return_url += '|verifypeer=false'
-            #xbmc.log("Request is insecure %s"%return_url,level=#xbmc.logDEBUG)   
+            #xbmc.log("Request is insecure %s"%return_url,level=xbmc.LOGDEBUG)   
         return return_url
 
 
@@ -947,11 +947,11 @@ class Connection(object):
         q = self._getQueryDict({'id': aid, 'size': size})
 
         req = self._getRequest(viewName, q)
-        ##xbmc.log("Requesting %s"%str(req.full_url),xbmc.logDEBUG)
+        ##xbmc.log("Requesting %s"%str(req.full_url),level=xbmc.LOGDEBUG)
         return_url = req.full_url
         if self._insecure:
             return_url += '|verifypeer=false'
-            #xbmc.log("Request is insecure %s"%return_url,level=#xbmc.logDEBUG)   
+            #xbmc.log("Request is insecure %s"%return_url,level=xbmc.LOGDEBUG)   
         return return_url
 
 
@@ -1999,7 +1999,7 @@ class Connection(object):
             q['musicFolderId'] = musicFolderId
 
         req = self._getRequest(viewName, q)
-        #xbmc.log("Requesting %s"%str(req.full_url),xbmc.logDEBUG)        
+        #xbmc.log("Requesting %s"%str(req.full_url),level=xbmc.LOGDEBUG)        
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
@@ -2811,12 +2811,12 @@ class Connection(object):
         qdict.update(query)
         url = '%s:%d/%s/%s' % (self._baseUrl, self._port, self._serverPath,
             viewName)
-        #xbmc.log("Standard URL %s"%url,level=#xbmc.logDEBUG)
-        #xbmc.log("Qdict %s"%str(qdict),level=#xbmc.logDEBUG)
+        #xbmc.log("Standard URL %s"%url,level=xbmc.LOGDEBUG)
+        #xbmc.log("Qdict %s"%str(qdict),level=xbmc.LOGDEBUG)
         req = urllib.request.Request(url, urlencode(qdict).encode('utf-8'))
         if(self._useGET or ('getCoverArt' in viewName) or ('stream' in viewName)):
             url += '?%s' % urlencode(qdict)
-            #xbmc.log("UseGET URL %s"%(url), xbmc.logDEBUG)
+            #xbmc.log("UseGET URL %s"%(url), xbmc.LOGDEBUG)
             #print(url)
             req = urllib.request.Request(url)
         return req
