@@ -746,7 +746,7 @@ def get_entry_playlist(item,params):
                         menu_id=        params.get('menu_id')
 
                     ),
-        'info': {'music': { ##http://romanvm.github.io/Kodistubs/_autosummary/xbmcgui.html#xbmcgui.ListItem.setInfo
+        'info': {'music': {
             'title':        item.get('name'),
             'count':        item.get('songCount'),
             'duration':     item.get('duration'),
@@ -760,18 +760,11 @@ def get_image(item):
     try:
         if Addon().get_setting('enhanced_info'):
             image = db.get_value(item.get('id'), 'wikipedia_image')[0][0]
-        print("Checking image type %s %s %s"%(item.get('id'), image, type(image)))        
+        #print("Checking image type %s %s %s"%(item.get('id'), image, type(image)))        
         if (image is None) or (image =='') or (image =='None'):
             connection = get_connection()
-            print("Using coverart tag from item %s is it same as %s ?"%(item.get('coverArt'),item.get('id')))
-            image = connection.getCoverArtUrl(item.get('coverArt'))
-            print("got %s from lastfm for %s"%(image,item.get('name')))
-            print("If I user id instead I would get %s"%connection.getCoverArtUrl(item.get('id')))
-            #Might fall back to album art if necessary - disabled no extra results
-            if "blah&id=" not in image:
-                album_id = connection.getArtist(item.get('id')).get('artist').get('album')[0].get('coverArt')                
-                image = connection.getCoverArtUrl(album_id)
-                print("got %s from lastfm - first album for artist %s"%(image,item.get('name')))                   
+            #print("Using coverart tag from item %s is it same as %s ?"%(item.get('coverArt'),item.get('id')))
+            image = connection.getCoverArtUrl(item.get('coverArt'))            
         return image
     except:
         return image
@@ -809,8 +802,7 @@ def get_entry_artist(item,params):
         artist_lbl = '%s' % (item.get('name'))
     else:
         artist_lbl = '%s - %s' % (item.get('name'),artist_info)
-    print("Using label %s"%artist_lbl)
-    #artist_bio = artist_info.get('biography')
+    #print("Using label %s"%artist_lbl)
     fanart = image
     return {
         'label':    get_starred_label(item.get('id'),item.get('name')),
@@ -824,15 +816,9 @@ def get_entry_artist(item,params):
                         menu_id=    params.get('menu_id')
                     ),
         'info': {
-            'music': { ##http://romanvm.github.io/Kodistubs/_autosummary/xbmcgui.html#xbmcgui.ListItem.setInfo
+            'music': {
                 'count':    item.get('albumCount'),
                 'artist':   artist_lbl,
-		        #'title':    'testtitle',
-		        #'album':    'testalbum',
-		        #'comment':  'testcomment',
-		        #'label' : 'testlabel',
-		        #'label2' : 'testlabel2',
-                #'title':    artist_info
             }
         }
     }
@@ -852,7 +838,7 @@ def get_entry_album(item, params):
             menu_id=        params.get('menu_id')
         ),
         'info': {
-            'music': { ##http://romanvm.github.io/Kodistubs/_autosummary/xbmcgui.html#xbmcgui.ListItem.setInfo
+            'music': { 
                 'count':    item.get('songCount'),
                 'date':     convert_date_from_iso8601(item.get('created')), #date added
                 'duration': item.get('duration'),
@@ -894,7 +880,7 @@ def get_entry_track(item,params):
                     ),
         'is_playable':  True,
         'mime':         item.get("contentType"),
-        'info': {'music': { #http://romanvm.github.io/Kodistubs/_autosummary/xbmcgui.html#xbmcgui.ListItem.setInfo
+        'info': {'music': { 
             'title':        item.get('title'),
             'album':        item.get('album'),
             'artist':       item.get('artist'),

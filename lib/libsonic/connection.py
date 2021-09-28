@@ -228,15 +228,15 @@ class Connection(object):
         """
         methodName = 'ping'
         viewName = '%s.view' % methodName
-        print("test")
         req = self._getRequest(viewName)
-        print("Pinging %s"%str(req.full_url))#,#xbmc.logDEBUG)
-        #xbmc.log("Pinging %s"%str(req.full_url),#xbmc.logDEBUG)       
+        #print("Pinging %s"%str(req.full_url)),xbmc.logDEBUG)
+        #xbmc.log("Pinging %s"%str(req.full_url),xbmc.logDEBUG)       
         try:
             res = self._doInfoReq(req)
-            print(res)
+            #print(res)
         except Exception as e:
-            print("Ping failed %s"%e)
+            #print("Ping failed %s"%e)
+            xbmc.log("Ping failed %s"%e,xbmc.logDEBUG)
             return False
         if res['status'] == 'ok':
             return True
@@ -898,7 +898,7 @@ class Connection(object):
             'converted': converted})
 
         req = self._getRequest(viewName, q)
-        ##xbmc.log("Requesting %s"%str(req.full_url),#xbmc.logDEBUG)
+        ##xbmc.log("Requesting %s"%str(req.full_url),xbmc.logDEBUG)
         return_url = req.full_url
         if self._insecure:
             return_url += '|verifypeer=false'
@@ -947,7 +947,7 @@ class Connection(object):
         q = self._getQueryDict({'id': aid, 'size': size})
 
         req = self._getRequest(viewName, q)
-        ##xbmc.log("Requesting %s"%str(req.full_url),#xbmc.logDEBUG)
+        ##xbmc.log("Requesting %s"%str(req.full_url),xbmc.logDEBUG)
         return_url = req.full_url
         if self._insecure:
             return_url += '|verifypeer=false'
@@ -1999,7 +1999,7 @@ class Connection(object):
             q['musicFolderId'] = musicFolderId
 
         req = self._getRequest(viewName, q)
-        #xbmc.log("Requesting %s"%str(req.full_url),#xbmc.logDEBUG)        
+        #xbmc.log("Requesting %s"%str(req.full_url),xbmc.logDEBUG)        
         res = self._doInfoReq(req)
         self._checkStatus(res)
         return res
@@ -2491,8 +2491,8 @@ class Connection(object):
 
         req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
-        print(req.get_full_url())
-        print(res)
+        #print(req.get_full_url())
+        #print(res)
         self._checkStatus(res)
         return res
 
@@ -2817,7 +2817,7 @@ class Connection(object):
         if(self._useGET or ('getCoverArt' in viewName) or ('stream' in viewName)):
             url += '?%s' % urlencode(qdict)
             #xbmc.log("UseGET URL %s"%(url), xbmc.logDEBUG)
-            print(url)
+            #print(url)
             req = urllib.request.Request(url)
         return req
 
