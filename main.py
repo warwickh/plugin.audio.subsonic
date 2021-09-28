@@ -31,6 +31,10 @@ connection = None
 db = None
 
 cachetime = int(Addon().get_setting('cachetime'))
+try:
+    enhancedInfo = Addon().get_setting('enhanced_info')
+except:
+    enhancedInfo = False
 
 db_filename = "subsonic_sqlite.db"
 
@@ -775,13 +779,9 @@ def get_artist_info(artist_id, forced=False):
     print("Retreiving artist info for id: %s"%(artist_id))
     #popup("Updating artist info\nplease wait")
     try:    
-        if Addon().get_setting('enhanced_info'):
+        if enhancedInfo:
             artist_info = db.get_value(artist_id, 'artist_info')[0][0]
             artist_wiki = db.get_value(artist_id, 'wikipedia_extract')[0][0] 
-            #plugin.log("Artist info: %s"%artist_info) 
-            #plugin.log("Artist wiki: %s"%artist_wiki)
-            #plugin.log("Len Artist info: %s"%len(artist_info))
-            #plugin.log("Len Artist wiki: %s"%len(artist_wiki))
             if(len(artist_info)<10):
                 print("Using wiki data")
                 artist_info = artist_wiki

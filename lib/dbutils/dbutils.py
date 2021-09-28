@@ -70,6 +70,8 @@ class SQLiteDatabase(object):
             last_update = self.get_value(artist_id, 'last_update')
             record_age = round(time.time())-round(float(last_update[0][0]))
             return record_age
+        except IndexError:
+            print("No existing record for artist %s" % artist_id)
         except Exception as e:
             print("get_record_age failed %s" % e)
         return 0
