@@ -1,5 +1,10 @@
 # Changelog
 
+## v3.0.3
+Released 29th September 2021 (by warwickh)
+* Added enhanced data collection and display from musicbrainz and wikipedia 
+* Added aqlite storage of artist information to speed loading
+
 ## v3.0.2
 Released 29th September 2021 (by warwickh)
 * Removed dependency on future and dateutil 
