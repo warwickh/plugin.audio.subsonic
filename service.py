@@ -44,6 +44,16 @@ except:
 
 scrobbled = False
 
+def check_address_format():
+    address = Addon().get_setting('subsonic_url')
+    port = Addon().get_setting('port')
+    if len(address.split(":"))>2:
+        found_port = address.split(":")[2]            
+        plugin.log("Found port %s in address %s, splitting"%(found_port, address))
+        plugin.log("Changing port from %s to %s"%(port, found_port))
+        Addon().set_setting('port', int(found_port))
+        Addon().set_setting('subsonic_url', "%s:%s"%(address.split(":")[0],address.split(":")[1]))
+        
 def popup(text, time=5000, image=None):
     title = plugin.addon.getAddonInfo('name')
     icon = plugin.addon.getAddonInfo('icon')
@@ -75,10 +85,12 @@ def get_connection():
     return connection
 
 def get_mb():
+    global mb
     mb = musicbrainz.MBConnection()
     return mb
 
 def get_db():
+    global db
     db_path = os.path.join(plugin.profile_dir, db_filename)   
     plugin.log("Getting DB %s"%db_path)  
     try:
@@ -118,7 +130,7 @@ def refresh_artist(artist_id):
 def check_db_status(forced=False):
     global last_db_check
     refresh_single_flag = False   
-    try:             
+    if 1:#try:             
         if(time.time()-check_freq > last_db_check) or forced:
             #popup("DB Check Starting")
             plugin.log("DB check starting %s %s" % (time.time(), last_db_check))
@@ -135,8 +147,8 @@ def check_db_status(forced=False):
                             refresh_artist(artist_id)
                             if(record_age>0):refresh_single_flag = True
             last_db_check = time.time()
-    except Exception as e:
-        plugin.log("DB check failed %s"%e)
+    #except Exception as e:
+    #    plugin.log("DB check failed %s"%e)
 
     return
 
@@ -180,6 +192,7 @@ def scrobble_track(track_id):
 
 if __name__ == '__main__':
     if serviceEnabled:  
+        check_address_format()        
         monitor = xbmc.Monitor()
         xbmc.log("Subsonic service started", xbmc.LOGINFO)
         popup("Subsonic service started")

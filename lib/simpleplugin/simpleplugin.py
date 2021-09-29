@@ -58,7 +58,7 @@ def _format_vars(variables):
     :return: formatted string with sorted ``var = val`` pairs
     :rtype: str
     """
-    var_list = [(var, val) for var, val in iteritems(variables)]
+    var_list = [(var, val) for var, val in iter(variables.items())]
     lines = []
     for var, val in sorted(var_list, key=lambda i: i[0]):
         if not (var.startswith('__') or var.endswith('__')):
@@ -320,7 +320,7 @@ class MemStorage(MutableMapping):
         :rtype: str
         """
         lines = []
-        for key, val in iteritems(self):
+        for key, val in iter(self.items()):
             lines.append('{0}: {1}'.format(repr(key), repr(val)))
         return ', '.join(lines)
 
@@ -1187,7 +1187,7 @@ class RoutedPlugin(Plugin):
                     quote_plus(str(arg))
                 )
             # list allows to manipulate the dict during iteration
-            for key, value in list(iteritems(kwargs)):
+            for key, value in list(iter(kwargs.items())):
                 for match in matches[len(args):]:
 
                     match_string = match[1:-1]
@@ -1327,7 +1327,7 @@ class RoutedPlugin(Plugin):
             if match is not None:
                 kwargs = match.groupdict()
                 # list allows to manipulate the dict during iteration
-                for key, value in list(iteritems(kwargs)):
+                for key, value in list(iter(kwargs.items())):
                     if key.startswith('int__') or key.startswith('float__'):
                         del kwargs[key]
                         if key.startswith('int__'):

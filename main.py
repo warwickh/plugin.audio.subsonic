@@ -50,7 +50,6 @@ def popup(text, time=5000, image=None):
 
 def get_connection():
     global connection
-    
     if connection==None:   
         connected = False  
         # Create connection      
