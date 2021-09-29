@@ -130,7 +130,7 @@ def refresh_artist(artist_id):
 def check_db_status(forced=False):
     global last_db_check
     refresh_single_flag = False   
-    if 1:#try:             
+    try:             
         if(time.time()-check_freq > last_db_check) or forced:
             #popup("DB Check Starting")
             plugin.log("DB check starting %s %s" % (time.time(), last_db_check))
@@ -147,8 +147,8 @@ def check_db_status(forced=False):
                             refresh_artist(artist_id)
                             if(record_age>0):refresh_single_flag = True
             last_db_check = time.time()
-    #except Exception as e:
-    #    plugin.log("DB check failed %s"%e)
+    except Exception as e:
+        plugin.log("DB status check failed %s"%e)
 
     return
 
