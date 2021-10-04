@@ -19,12 +19,13 @@ mb = None
 
 serviceEnabled = True
 
-refresh_age = 86400     #multiple of random to age info records - needs some validation
-check_freq = 300#3600   #How often to run a refresh cycle - needs some validation
+refresh_age = 3600     #multiple of random to age info records - needs some validation
+check_freq = 30   #How often to run a refresh cycle - needs some validation
 
 db_filename = "subsonic_sqlite.db"
 
 last_db_check = 0
+current_artist_index = 0
 
 from simpleplugin import Plugin
 from simpleplugin import Addon
@@ -73,6 +74,7 @@ def get_connection():
                 insecure=Addon().get_setting('insecure'),
                 legacyAuth=Addon().get_setting('legacyauth'),
                 useGET=Addon().get_setting('useget'),
+                appName="Kodi-Subsonic",
             )            
             connected = connection.ping()
         except:
@@ -104,6 +106,7 @@ def refresh_artist(artist_id):
     connection = get_connection()
     artist = connection.getArtist(artist_id)#['subsonic-response']
     artist_name = artist['artist']['name']
+    db.update_value(artist_id, 'artist_name', artist_name)
     artist_info = connection.getArtistInfo2(artist_id)
     try:
         artist_info = artist_info['artistInfo2']['biography']
@@ -112,14 +115,13 @@ def refresh_artist(artist_id):
         plugin.log("subbed: %s"%artist_info)
     except:
         artist_info = ""
-    if enhancedInfo:
-        mb = get_mb()
+    if(enhancedInfo):
+        mb = get_mb()        
         mb_artist_id = mb.get_artist_id(artist_name)
         artist_image_url = mb.get_artist_image(mb_artist_id)
         wikipedia_url = mb.get_artist_wikpedia(mb_artist_id)
         artist_wiki_extract = mb.get_wiki_extract(wikipedia_url)
         wikipedia_image = mb.get_wiki_image(wikipedia_url)
-        db.update_value(artist_id, 'artist_name', artist_name)
         db.update_value(artist_id, 'artist_info', artist_info)
         db.update_value(artist_id, 'mb_artist_id', mb_artist_id)
         db.update_value(artist_id, 'image_url', artist_image_url)
@@ -127,32 +129,37 @@ def refresh_artist(artist_id):
         db.update_value(artist_id, 'wikipedia_extract', artist_wiki_extract)
         db.update_value(artist_id, 'wikipedia_image', wikipedia_image)
 
-def check_db_status(forced=False):
+def check_db_status():
     global last_db_check
-    refresh_single_flag = False   
+    global current_artist_index 
     try:             
-        if(time.time()-check_freq > last_db_check) or forced:
-            #popup("DB Check Starting")
+        if(time.time()-check_freq > last_db_check): #Won't check on every run uses check_freq
             plugin.log("DB check starting %s %s" % (time.time(), last_db_check))
             db = get_db()
             connection = get_connection()
             response = connection.getArtists()
-            for index in response["artists"]["index"]:
-                    for artist in index["artist"]:
-                        artist_id = artist['id']
-                        record_age = db.get_record_age(artist_id) 
-                        if(forced or not record_age or (record_age > (random.randint(1,111)*refresh_age))) and not refresh_single_flag:
-                            #plugin.log("Record age %s vs %s for %s"%(record_age, (random.randint(1,111)*refresh_age), artist_id)) 
-                            #popup("Refreshing %s" % artist_id)
-                            refresh_artist(artist_id)
-                            if(record_age>0):refresh_single_flag = True
+            current_index_content = response["artists"]["index"][current_artist_index] #Completes refresh for alpha index
+            plugin.log("Starting info load for index %s"%current_index_content['name'])
+            for artist in current_index_content["artist"]:
+                artist_id = artist['id']
+                record_age = db.get_record_age(artist_id) 
+                plugin.log("Record age %s vs %s for %s"%(record_age, (random.randint(1,111)*refresh_age), artist_id))
+                if(not record_age or (record_age > (random.randint(1,111)*refresh_age))):
+                    plugin.log("Record age %s vs %s for %s"%(record_age, (random.randint(1,111)*refresh_age), artist_id)) 
+                    plugin.log("Refreshing %s" % (artist_id))
+                    refresh_artist(artist_id)
+                    plugin.log("Refresh complete for %s" % (artist_id))
+            plugin.log("Finished info loading for index %s"%current_index_content['name'])
+            current_artist_index+=1
+            if(current_artist_index>=len(response["artists"]["index"])):current_artist_index=0
             last_db_check = time.time()
     except Exception as e:
-        plugin.log("DB status check failed %s"%e)
+        plugin.log("Refresh check failed %s"%e)
 
     return
 
 def check_player_status():
+    global scrobbled
     if (scrobbleEnabled and xbmc.getCondVisibility("Player.HasMedia")):
         try:             
             currentFileName = xbmc.getInfoLabel("Player.Filenameandpath")
@@ -187,6 +194,7 @@ def scrobble_track(track_id):
         return True
     else:
         popup("Scrobble failed")
+        xbmc.log("Scrobble failed", xbmc.LOGERROR)
         return False
 
 

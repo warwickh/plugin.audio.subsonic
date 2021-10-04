@@ -1,5 +1,6 @@
 import sqlite3 as sql
 import time
+import xbmc
 
 tbl_artist_info_ddl = str('CREATE TABLE artist_info ('
                             'artist_id                  TEXT NOT NULL PRIMARY KEY,'
@@ -23,24 +24,24 @@ class SQLiteDatabase(object):
 
     def connect(self):
         try:
-            #xbmc.log("Trying connection to the database %s"%self.db_filename, xbmc.LOGINFO)
-            print("Trying connection to the database %s"%self.db_filename)
+            xbmc.log("Trying connection to the database %s"%self.db_filename, xbmc.LOGINFO)
+            #print("Trying connection to the database %s"%self.db_filename)
             self.conn = sql.connect(self.db_filename)
             cursor = self.conn.cursor()
             cursor.execute(str('SELECT SQLITE_VERSION()'))
-            #xbmc.log("Connection %s was successful %s"%(self.db_filename, cursor.fetchone()[0]), xbmc.LOGINFO)
-            print("Connection %s was successful %s"%(self.db_filename, cursor.fetchone()[0]))
+            xbmc.log("Connection %s was successful %s"%(self.db_filename, cursor.fetchone()[0]), xbmc.LOGINFO)
+            #print("Connection %s was successful %s"%(self.db_filename, cursor.fetchone()[0]))
             cursor.row_factory = lambda cursor, row: row[0]
             cursor.execute(str('SELECT name FROM sqlite_master WHERE type=\'table\' ''AND name NOT LIKE \'sqlite_%\''))
             list_tables = cursor.fetchall()
             if not list_tables:
                 # If no tables exist create a new one
-                #xbmc.log("Creating Subsonic local DB", xbmc.LOGINFO)
-                print("Creating Subsonic local DB")
+                xbmc.log("Creating Subsonic local DB", xbmc.LOGINFO)
+                #print("Creating Subsonic local DB")
                 cursor.execute(tbl_artist_info_ddl)
         except sql.Error as e:
-            #xbmc.log("SQLite error %s"%e.args[0], xbmc.LOGINFO)
-            print("SQLite error %s"%e.args[0])
+            xbmc.log("SQLite error %s"%e.args[0], xbmc.LOGINFO)
+            #print("SQLite error %s"%e.args[0])
 
     def get_cursor(self):
         return self.conn.cursor()

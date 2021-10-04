@@ -2816,7 +2816,7 @@ class Connection(object):
         req = urllib.request.Request(url, urlencode(qdict).encode('utf-8'))
         if(self._useGET or ('getCoverArt' in viewName) or ('stream' in viewName)):
             url += '?%s' % urlencode(qdict)
-            #xbmc.log("UseGET URL %s"%(url), xbmc.LOGDEBUG)
+            xbmc.log("UseGET URL %s"%(url), xbmc.LOGDEBUG)
             #print(url)
             req = urllib.request.Request(url)
         return req

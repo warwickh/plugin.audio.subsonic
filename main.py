@@ -63,6 +63,7 @@ def get_connection():
                 insecure=Addon().get_setting('insecure'),
                 legacyAuth=Addon().get_setting('legacyauth'),
                 useGET=Addon().get_setting('useget'),
+                appName="Kodi-Subsonic",
             )            
             connected = connection.ping()
         except Exception as e:
@@ -764,13 +765,16 @@ def get_image(item):
         if Addon().get_setting('enhanced_info'):
             image = db.get_value(item.get('id'), 'wikipedia_image')[0][0]
         #print("Checking image type %s %s %s"%(item.get('id'), image, type(image)))        
-        if (image is None) or (image =='') or (image =='None'):
-            connection = get_connection()
-            #print("Using coverart tag from item %s is it same as %s ?"%(item.get('coverArt'),item.get('id')))
-            image = connection.getCoverArtUrl(item.get('coverArt'))            
+    except IndexError:
+            print("Wiki image not available for artist %s" % item.get('name'))
+    except Exception as e:
+        print("Error getting image for %s %s"%(item.get('name'),e))
         return image
-    except:
-        return image
+    if (image is None) or (image =='') or (image =='None'):
+        connection = get_connection()
+        #print("Using coverart tag from item %s is it same as %s ?"%(item.get('coverArt'),item.get('id')))
+        image = connection.getCoverArtUrl(item.get('coverArt'))            
+    return image
 
 def get_artist_info(artist_id, forced=False):
     db = get_db()
@@ -789,8 +793,10 @@ def get_artist_info(artist_id, forced=False):
         if(artist_info is None):
             print("artist_info is None making empty string")
             artist_info = ""
+    except IndexError:
+        print("Enhanced info not available for artist %s" % artist_id)
     except Exception as e:
-        print("Error get info from DB %s"%e)   
+        print("Error getting artist info from DB %s"%e)   
     return artist_info
 
 def get_entry_artist(item,params):
