@@ -19,7 +19,7 @@ mb = None
 
 serviceEnabled = True
 
-refresh_age = 3600     #multiple of random to age info records - needs some validation
+refresh_age = 86400#3600     #multiple of random to age info records - needs some validation
 check_freq = 30   #How often to run a refresh cycle - needs some validation
 
 db_filename = "subsonic_sqlite.db"
@@ -142,13 +142,13 @@ def check_db_status():
             plugin.log("Starting info load for index %s"%current_index_content['name'])
             for artist in current_index_content["artist"]:
                 artist_id = artist['id']
-                record_age = db.get_record_age(artist_id) 
-                plugin.log("Record age %s vs %s for %s"%(record_age, (random.randint(1,111)*refresh_age), artist_id))
-                if(not record_age or (record_age > (random.randint(1,111)*refresh_age))):
-                    plugin.log("Record age %s vs %s for %s"%(record_age, (random.randint(1,111)*refresh_age), artist_id)) 
-                    plugin.log("Refreshing %s" % (artist_id))
+                record_age = db.get_record_age(artist_id)
+                rnd_age =  random.randint(1,111)*refresh_age
+                #plugin.log("Record age %s vs %s for %s"%(record_age, rnd_age, artist_id))
+                if(not record_age or (record_age > rnd_age)):
+                    #plugin.log("Refreshing %s" % (artist_id))
                     refresh_artist(artist_id)
-                    plugin.log("Refresh complete for %s" % (artist_id))
+                    #plugin.log("Refresh complete for %s" % (artist_id))
             plugin.log("Finished info loading for index %s"%current_index_content['name'])
             current_artist_index+=1
             if(current_artist_index>=len(response["artists"]["index"])):current_artist_index=0
