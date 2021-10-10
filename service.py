@@ -20,7 +20,9 @@ mb = None
 serviceEnabled = True
 
 refresh_age = 86400#3600     #multiple of random to age info records - needs some validation
-check_freq = 30   #How often to run a refresh cycle - needs some validation
+check_freq_init = 30   #How often to run a refresh cycle - needs some validation - updates afer first load to
+check_freq_refresh = 86400
+
 
 db_filename = "subsonic_sqlite.db"
 
@@ -131,9 +133,10 @@ def refresh_artist(artist_id):
 
 def check_db_status():
     global last_db_check
+    global check_freq_init
     global current_artist_index 
     try:             
-        if(time.time()-check_freq > last_db_check): #Won't check on every run uses check_freq
+        if(time.time()-check_freq_init > last_db_check): #Won't check on every run uses check_freq_init
             plugin.log("DB check starting %s %s" % (time.time(), last_db_check))
             db = get_db()
             connection = get_connection()
@@ -151,7 +154,11 @@ def check_db_status():
                     #plugin.log("Refresh complete for %s" % (artist_id))
             plugin.log("Finished info loading for index %s"%current_index_content['name'])
             current_artist_index+=1
-            if(current_artist_index>=len(response["artists"]["index"])):current_artist_index=0
+            if(current_artist_index>=len(response["artists"]["index"])): #init load complete go to daily check freq
+                plugin.log("Finished info loading for all alpha index")
+                current_artist_index=0
+                check_freq_init = check_freq_refresh
+                plugin.log("check_freq_init is now %s"%check_freq_init)
             last_db_check = time.time()
     except Exception as e:
         plugin.log("Refresh check failed %s"%e)
