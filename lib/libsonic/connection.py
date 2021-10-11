@@ -20,6 +20,7 @@ from netrc import netrc
 from hashlib import md5
 import urllib.request
 import urllib.error
+import urllib.parse
 from http import client as http_client
 from urllib.parse import urlencode
 from io import StringIO
@@ -154,8 +155,18 @@ class Connection(object):
                             request.  This is not recommended as request
                             URLs can get very long with some API calls
         """
-        self._baseUrl = baseUrl
-        self._hostname = baseUrl.split('://')[1].strip()
+        
+        self._baseUrl = baseUrl.rstrip('/')
+        self._hostname = self._baseUrl.split('://')[1]
+        if len(self._hostname.split('/'))>1:
+            print(len(self._hostname.split('/')))
+            xbmc.log("Got a folder %s"%(self._hostname.split('/')[1]),xbmc.LOGDEBUG)
+            parts = urllib.parse.urlparse(self._baseUrl)
+            self._baseUrl = "%s://%s" % (parts.scheme, parts.hostname)
+            self._hostname = parts.hostname
+            self._serverPath = parts.path.strip('/') + '/rest'
+        else:
+            self._serverPath = serverPath.strip('/')
         self._username = username
         self._rawPass = password
         self._legacyAuth = legacyAuth
@@ -172,7 +183,6 @@ class Connection(object):
         self._port = int(port)
         self._apiVersion = apiVersion
         self._appName = appName
-        self._serverPath = serverPath.strip('/')
         self._insecure = insecure
         self._opener = self._getOpener(self._username, self._rawPass)
 
