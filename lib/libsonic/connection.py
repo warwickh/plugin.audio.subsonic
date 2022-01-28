@@ -909,7 +909,7 @@ class Connection(object):
         #xbmc.log("Requesting %s"%str(req.full_url),xbmc.LOGDEBUG)
         return_url = req.full_url
         if self._insecure:
-            return_url += '|verifypeer=false'
+            return_url += '&verifypeer=false'
             xbmc.log("Request is insecure %s"%return_url,level=xbmc.LOGDEBUG)   
         return return_url
 
@@ -958,7 +958,7 @@ class Connection(object):
         #xbmc.log("Requesting %s"%str(req.full_url),xbmc.LOGDEBUG)
         return_url = req.full_url
         if self._insecure:
-            return_url += '|verifypeer=false'
+            return_url += '&verifypeer=false'
             xbmc.log("Request is insecure %s"%return_url,level=xbmc.LOGDEBUG)   
         return return_url
 
