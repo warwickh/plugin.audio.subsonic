@@ -19,7 +19,8 @@ import inspect
 import time
 import hashlib
 import pickle
-from collections import MutableMapping, namedtuple
+from collections.abc import MutableMapping
+from collections import namedtuple
 from copy import deepcopy
 from functools import wraps
 from shutil import copyfile
