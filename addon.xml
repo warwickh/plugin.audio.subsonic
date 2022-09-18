@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.audio.subsonic" name="Subsonic" version="2.0.8" provider-name="BasilFX,grosbouff,silascutler,Heruwar">
-<requires>
-    <import addon="xbmc.python" version="2.14.0"/>
-    <import addon="script.module.dateutil" version="2.4.2"/>
-</requires>
-<extension point="xbmc.python.pluginsource" library="main.py">
-  <provides>audio</provides>
-</extension>
+<addon id="plugin.audio.subsonic" name="Subsonic" version="2.1.0" provider-name="BasilFX,warwickh">
+    <requires>
+        <import addon="xbmc.python" version="2.7.0"/>
+    </requires>
+    <extension point="xbmc.python.pluginsource" library="main.py">
+        <provides>audio</provides>
+    </extension>
+    <extension point="xbmc.service" library="service.py" />
     <extension point="xbmc.addon.metadata">
         <summary lang="en">Subsonic music addon for Kodi.</summary>
         <summary lang="fr">Extension Subsonic pour Kodi.</summary>
@@ -14,31 +14,35 @@
         <description lang="en">
             Stream, star and download your tunes, directly to Kodi !
             For feature requests / issues:
-            https://github.com/gordielachance/plugin.audio.subsonic/issues
+            https://github.com/warwickh/plugin.audio.subsonic/issues
             Contributions are welcome:
-            https://github.com/gordielachance/plugin.audio.subsonic
+            https://github.com/warwickh/plugin.audio.subsonic
         </description>
         <description lang="fr">
             Jouez, marquez vos favoris et téléchargez votre musique, directement dans Kodi !
             Pour les demandes et problèmes :
-            https://github.com/gordielachance/plugin.audio.subsonic/issues
+            https://github.com/warwickh/plugin.audio.subsonic/issues
             Les contributions sont les bienvenues :
-            https://github.com/gordielachance/plugin.audio.subsonic
+            https://github.com/warwickh/plugin.audio.subsonic
         </description>
 		<description lang="de">
             Streame, bewerte und downloade deine Medien direkt in Kodi !
 	    Für neue Eigentschaften oder Fehler:
-            https://github.com/gordielachance/plugin.audio.subsonic/issues
+            https://github.com/warwickh/plugin.audio.subsonic/issues
             Beihilfe ist Willkommen:
-            https://github.com/gordielachance/plugin.audio.subsonic
+            https://github.com/warwickh/plugin.audio.subsonic
         </description>
+        <assets>
+            <icon>icon.png</icon>
+            <fanart>fanart.jpg</fanart>
+        </assets>
         <disclaimer lang="en"></disclaimer>
         <language>multi</language>
         <platform>all</platform>
         <license>MIT</license>
         <forum></forum>
         <website>http://www.subsonic.org</website>
-	<source>https://github.com/gordielachance/plugin.audio.subsonic</source>
+	<source>https://github.com/warwickh/plugin.audio.subsonic</source>
         <email></email>
     </extension>
 </addon>

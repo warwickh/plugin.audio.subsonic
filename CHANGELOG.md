@@ -1,5 +1,26 @@
 # Changelog
 
+## v2.1.0
+Backport v3.0.2 to Kodi Leia for testing
+
+## v3.0.2
+Released 29th September 2021 (by warwickh)
+* Removed dependency on future and dateutil 
+* Simpleplugin modified - no longer py2 compatible
+
+## v3.0.1
+Released 2nd September 2021 (by warwickh)
+* Added Navidrome compatibility (remove dependency on integer ids)
+
+## v3.0.0
+Released 29th June 2021 (by warwickh)
+* Basic update to provide Matrix compatility. Not tested on Kodi below v19
+* Updates simpleplugin to latest version (3.0.0) https://github.com/vlmaksime/script.module.simpleplugin
+* Moves some legacy simpleplugin static routines into main.py
+* Removes dependancy on libsonic_extra by moving some walk functions into main.py
+* Updates libsonic to latest version and adds functions for returning raw url for populating menus
+* Move to version 3+ for diffferentiation from Leia compatible version
+
 ## v2.0.8
 Released 29th November 2017 (by Heruwar)
 * Fixes a security issue where the password is sent as plaintext in the URL query parameters when methods from libsonic_extas are used. 

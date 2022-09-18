@@ -77,7 +77,7 @@ msgid "Cache (in minutes)"
 msgstr ""
 
 msgctxt "#30018"
-msgid "Cache datas time"
+msgid "Cache data time"
 msgstr ""
 
 msgctxt "#30019"
@@ -157,4 +157,22 @@ msgctxt "#30039"
 msgid "Search"
 msgstr ""
 
+msgctxt "#30040"
+msgid "useGET"
+msgstr ""
 
+msgctxt "#30041"
+msgid "legacyauth"
+msgstr ""
+
+msgctxt "#30042"
+msgid "port"
+msgstr ""
+
+msgctxt "#30043"
+msgid "Merge album folders"
+msgstr ""
+
+msgctxt "#30044"
+msgid "Scrobble to Last.FM"
+msgstr ""
