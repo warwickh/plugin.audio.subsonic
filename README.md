@@ -20,7 +20,7 @@ Leia compatible version available in alternate branch
 
 ## Installation
 From repository
-[repository.warwickh-0.9.1.zip](https://github.com/warwickh/repository.warwickh/raw/master/matrix/zips/repository.warwickh/repository.warwickh-0.9.1.zip) (Please report any issues)
+[repository.warwickh](https://github.com/warwickh/repository.warwickh/raw/master/matrix/zips/repository.warwickh) (Please report any issues)
 
 From GitHub
 * Click the code button and download
