@@ -153,8 +153,8 @@ msgid "Browse"
 msgstr "Durchsuchen"
 
 msgctxt "#30039"
-msgid "Search"
-msgstr "Suche"
+msgid "Search Songs"
+msgstr "Suche Lieder"
 
 msgctxt "#30040"
 msgid "useGET"
@@ -175,3 +175,7 @@ msgstr ""
 msgctxt "#30044"
 msgid "Scrobble to Last.FM"
 msgstr ""
+
+msgctxt "#30045"
+msgid "Search Albums"
+msgstr "Suche Albums"

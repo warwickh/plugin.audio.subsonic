@@ -107,6 +107,11 @@ def root(params):
             'callback': 'search',
             'thumb': None
         },  
+        'searchalbum': {
+            'name':     Addon().get_localized_string(30045),
+            'callback': 'search_album',
+            'thumb': None
+        },  
     }
 
     # Iterate through categories
@@ -578,27 +583,61 @@ def search(params):
 
     dialog = xbmcgui.Dialog()
     d = dialog.input(Addon().get_localized_string(30039), type=xbmcgui.INPUT_ALPHANUM)
-    if not d:
-        d = " "
-
-
-    # get connection
-    connection = get_connection()
-
-    if connection==False:
-        return
 
     listing = []
 
-    # Get items
-    items = connection.search2(query=d)
-    # Iterate through items
-    for item in items.get('searchResult2').get('song'):
-        entry = get_entry_track( item, params)
-        listing.append(entry)
+    if d:
+        # get connection
+        connection = get_connection()
 
-    if len(listing) == 1:
-        plugin.log('One single Media Folder found; do return listing from browse_indexes()...')
+        if connection == False:
+            return
+
+        # Get items
+        items = connection.search2(query=d)
+        # Iterate through items
+        songs = items.get('searchResult2').get('song')
+        if songs:
+            for item in songs:
+                entry = get_entry_track( item, params)
+                listing.append(entry)
+
+    if len(listing) == 0:
+        plugin.log('No songs found; do return listing from browse_indexes()...')
+        return browse_indexes(params)
+    else:
+        add_directory_items(create_listing(listing))
+
+
+@plugin.action()
+def search_album(params):
+
+    dialog = xbmcgui.Dialog()
+    d = dialog.input(Addon().get_localized_string(30045), type=xbmcgui.INPUT_ALPHANUM)
+
+    listing = []
+
+    if d:
+        # get connection
+        connection = get_connection()
+        if connection==False:
+            return
+        # Get items, we are only looking for albums here
+        # so artistCount and songCount is set to 0
+        items = connection.search2(query=d, artistCount=0, songCount=0)
+        # Iterate through items
+    
+        album_list = items.get('searchResult2').get('album')
+        if album_list:
+            for item in items.get('searchResult2').get('album'):
+                entry = get_entry_album( item, params)
+                listing.append(entry)
+
+    # I believe it is ok to return an empty listing if
+    # the search gave no result
+    # maybe inform the user?
+    if len(listing) == 0:
+        plugin.log('No albums found; do return listing from browse_indexes()...')
         return browse_indexes(params)
     else:
         add_directory_items(create_listing(listing))
