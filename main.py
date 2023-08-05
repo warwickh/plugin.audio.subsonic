@@ -111,6 +111,11 @@ def root(params):
             'name':     Addon().get_localized_string(30045),
             'callback': 'search_album',
             'thumb': None
+        },
+        'radio': {
+            'name':     Addon().get_localized_string(30046),
+            'callback': 'browse_radio',
+            'thumb': None
         },  
     }
 
@@ -242,6 +247,31 @@ def menu_tracks(params):
     add_directory_items(create_listing(
         listing,
     ))
+
+@plugin.action()
+def browse_radio(params):
+    # get connection
+    connection = get_connection()
+    
+    if connection==False:
+        return
+
+    listing = []
+
+    # Get items
+    items = walk_radio()
+
+    # Iterate through items
+    for item in items:
+        print(item)
+        entry = get_entry_radio(item,params)
+        listing.append(entry)
+        
+    add_directory_items(create_listing(
+        listing,
+        sort_methods = get_sort_methods('playlists',params), #he list of integer constants representing virtual folder sort methods.
+    ))
+
 
 @plugin.action()
 def browse_folders(params):
@@ -879,6 +909,17 @@ def get_entry_album(item, params):
         entry['context_menu'] = context_actions
 
     return entry
+
+def get_entry_radio(item,params):
+    menu_id = params.get('menu_id')
+    entry = {
+        'label':    item.get('name'),
+        'url':      item.get('streamUrl'),
+        'is_playable':  True
+    }
+    
+    return entry
+
 
 def get_entry_track(item,params):
     menu_id = params.get('menu_id')
@@ -1542,6 +1583,17 @@ def walk_tracks_random(size=None, genre=None, fromYear=None,toYear=None):
             yield song
     except KeyError:
         yield from ()        
+
+def walk_radio():
+    """
+    Request Subsonic's radio stations and iterate over each item.
+    """
+    response = connection.getInternetRadioStations()
+    try:
+        for station in response["internetRadioStations"]["internetRadioStation"]:
+            yield station
+    except KeyError:
+        yield from ()
 
 def walk_tracks_starred():
     """
