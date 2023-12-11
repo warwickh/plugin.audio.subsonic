@@ -168,6 +168,11 @@ def menu_albums(params):
             'name':     Addon().get_localized_string(30026),
             'thumb': None,
             'args':     {"ltype": "random"}
+        },
+        'albums_favorites': {
+            'name':     Addon().get_localized_string(30027),
+            'thumb': None,
+            'args':     {"starred": True}
         }
     }
 
@@ -443,12 +448,16 @@ def list_albums(params):
     link_root = navigate_root()
     listing.append(link_root)
 
-
-    if not 'artist_id' in params:
-        # Pagination if we've not reached the end of the lsit
-        # if type(items) != type(True): TO FIX
-        link_next = navigate_next(params)
-        listing.append(link_next)
+    if 'starred' in query_args:
+        if len(items) == albums_per_page:
+            link_next = navigate_next(params)
+            listing.append(link_next)
+    else:
+        if not 'artist_id' in params:
+            # Pagination if we've not reached the end of the lsit
+            # if type(items) != type(True): TO FIX
+            link_next = navigate_next(params)
+            listing.append(link_next)
 
     add_directory_items(create_listing(
         listing,
@@ -1497,26 +1506,38 @@ def walk_genres():
     except KeyError:
         yield from ()
 
-def walk_albums(ltype, size=None, fromYear=None,toYear=None, genre=None, offset=None):
+def walk_albums(ltype=None, size=None, fromYear=None,toYear=None, genre=None, offset=None, starred=None):
     """
     (ID3 tags)
     Request all albums for a given genre and iterate over each album.
     """
-    
-    if ltype == 'byGenre' and genre is None:
-        return
-    
-    if ltype == 'byYear' and (fromYear is None or toYear is None):
-        return
 
-    response = connection.getAlbumList2(
-        ltype=ltype, size=size, fromYear=fromYear, toYear=toYear,genre=genre, offset=offset)
+    if starred:
+        response = connection.getStarred2()
+        if not response['starred2']['album']: return
+        albums = response['starred2']['album']
+        offset = 0 if not offset else offset
+        if offset >= len(albums): return
+        albums_per_page = int(Addon().get_setting('albums_per_page'))
+        upper = min(len(albums), offset + albums_per_page)
+        albums = albums[offset:upper]
+        for album in albums:
+            yield album
+    else:
+        if ltype == 'byGenre' and genre is None:
+            return
+        
+        if ltype == 'byYear' and (fromYear is None or toYear is None):
+            return
 
-    if not response["albumList2"]["album"]:
-        return
+        response = connection.getAlbumList2(
+            ltype=ltype, size=size, fromYear=fromYear, toYear=toYear,genre=genre, offset=offset)
 
-    for album in response["albumList2"]["album"]:
-        yield album
+        if not response["albumList2"]["album"]:
+            return
+
+        for album in response["albumList2"]["album"]:
+            yield album
 
 
 def walk_album(album_id):

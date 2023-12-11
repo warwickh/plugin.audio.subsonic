@@ -112,6 +112,10 @@ msgctxt "#30026"
 msgid "Random albums"
 msgstr "Zufällige Alben"
 
+msgctxt "#30027"
+msgid "Favorite Albums"
+msgstr ""
+
 msgctxt "#30029"
 msgid "Next page"
 msgstr "Nächste Seite"
