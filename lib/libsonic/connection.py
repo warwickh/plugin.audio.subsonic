@@ -57,8 +57,10 @@ class HTTPSHandlerChain(urllib.request.HTTPSHandler):
     def https_open(self, req):
         return self.do_open(HTTPSConnectionChain, req, context=self._context)
 
-# install opener
-urllib.request.install_opener(urllib.request.build_opener(HTTPSHandlerChain()))
+# install opener (commented out — the global installer has no insecure context,
+# which breaks TLS behind Cloudflare/WAF. Each connection builds its own
+# opener via _getOpener() with the correct context.)
+# urllib.request.install_opener(urllib.request.build_opener(HTTPSHandlerChain()))
 
 class PysHTTPRedirectHandler(urllib.request.HTTPRedirectHandler):
     """
@@ -2783,6 +2785,11 @@ class Connection(object):
             PysHTTPRedirectHandler,
             https_chain,
         )
+        # Set a browser-like User-Agent so Cloudflare and other WAFs
+        # don't block requests (Python-urllib/3.x is often blocked).
+        opener.addheaders = [
+            ("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:120.0) Gecko/20100101 Firefox/120.0"),
+        ]
         return opener
 
     def _getQueryDict(self, d):
