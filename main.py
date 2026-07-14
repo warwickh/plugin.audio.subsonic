@@ -657,8 +657,9 @@ def play_track(params):
 
     url = connection.streamUrl(sid=id,
         maxBitRate=Addon().get_setting('bitrate_streaming'),
-        tformat=Addon().get_setting('transcode_format_streaming')
-    )
+        tformat=Addon().get_setting('transcode_format_streaming'),
+        estimateContentLength=True
+   )
 
     #return url
     _set_resolved_url(resolve_url(url))
