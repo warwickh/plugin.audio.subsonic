@@ -13,7 +13,7 @@
         <setting label="30008" type="lsep" />
         <setting label="30009" id="download_folder"  type="folder"  source="auto" option="writeable"/>
         <setting label="30010" type="lsep" />
-        <setting label="30011" id="transcode_format_streaming" type="labelenum"  values="mp3|raw|flv|ogg"/>
+        <setting label="30011" id="transcode_format_streaming" type="labelenum" values="mp3|raw|flv|ogg|m4a"/>
         <setting label="30012" id="bitrate_streaming" type="labelenum" default="0" values="320|256|224|192|160|128|112|96|80|64|56|48|40|32|0"/>
     </category>
     
