@@ -1,0 +1,40 @@
+name: build
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  zip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: plugin.audio.subsonic
+
+      - name: Read add-on version
+        id: ver
+        run: |
+          version=$(python -c "import xml.etree.ElementTree as ET; print(ET.parse('plugin.audio.subsonic/addon.xml').getroot().get('version'))")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Build zip
+        run: |
+          zip -r "plugin.audio.subsonic-${{ steps.ver.outputs.version }}.zip" plugin.audio.subsonic \
+            -x "plugin.audio.subsonic/.git/*" \
+               "plugin.audio.subsonic/.github/*" \
+               "plugin.audio.subsonic/pyproject.toml" \
+               "plugin.audio.subsonic/plan.md" \
+               "*.pyc" "*.pyo"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plugin.audio.subsonic-${{ steps.ver.outputs.version }}
+          path: plugin.audio.subsonic-*.zip
+
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: plugin.audio.subsonic-*.zip

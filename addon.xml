@@ -36,12 +36,11 @@
             <icon>icon.png</icon>
             <fanart>fanart.jpg</fanart>
         </assets>
-        <disclaimer lang="en"></disclaimer>
         <language>multi</language>
         <platform>all</platform>
         <license>MIT</license>
         <forum></forum>
-        <website>http://www.subsonic.org</website>
+        <website>https://www.subsonic.org</website>
 	<source>https://github.com/warwickh/plugin.audio.subsonic</source>
         <email></email>
     </extension>

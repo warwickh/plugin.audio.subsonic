@@ -1,0 +1,12 @@
+# Lint configuration only - this project is a Kodi add-on, not a pip package.
+[tool.ruff]
+target-version = "py38"
+line-length = 120
+# Vendored libraries
+extend-exclude = ["lib"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B", "I"]
+ignore = [
+    "E402",  # module-level import not at top - the sys.path bootstrap must run first
+]
